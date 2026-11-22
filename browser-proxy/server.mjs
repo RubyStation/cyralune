@@ -102,9 +102,10 @@ app.get('/login', async (_request, reply) => reply.type('text/html').send(`<!doc
 
 app.post('/login', { config: { rateLimit: false } }, async (request, reply) => {
   if (!accessToken) return reply.redirect('/');
-  if (!isAllowedOrigin(request.headers.origin, request.headers.host, publicOrigin)) {
-    return reply.code(403).send('Invalid request origin');
-  }
+  // Cloud Shell's authenticated preview can rewrite/omit the Origin header.
+  // The high-entropy access token authenticates this POST; reject explicit
+  // cross-site browser submissions without depending on proxy header fidelity.
+  if (request.headers['sec-fetch-site'] === 'cross-site') return reply.code(403).send('Cross-site login blocked');
   const ip = request.ip;
   if (!clientMayLogin(ip)) return reply.code(429).send('Too many attempts. Wait 15 minutes.');
   const provided = typeof request.body?.token === 'string' ? request.body.token : null;
@@ -118,7 +119,7 @@ app.post('/login', { config: { rateLimit: false } }, async (request, reply) => {
 });
 
 app.post('/logout', async (request, reply) => {
-  if (!isAllowedOrigin(request.headers.origin, request.headers.host, publicOrigin)) return reply.code(403).send('Invalid origin');
+  if (request.headers['sec-fetch-site'] === 'cross-site') return reply.code(403).send('Cross-site logout blocked');
   reply.header('Set-Cookie', 'relay_session=; Max-Age=0; HttpOnly; SameSite=Strict; Path=/');
   return reply.redirect('/login');
 });

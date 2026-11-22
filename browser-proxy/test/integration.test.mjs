@@ -70,10 +70,16 @@ test('remote token mode blocks anonymous files and websocket upgrades', { timeou
     }
 
     const badOrigin = await fetch(`${origin}/login`, {
-      method: 'POST', headers: { Origin: 'https://attacker.example', 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: 'POST', headers: { Origin: 'https://attacker.example', 'Sec-Fetch-Site': 'cross-site', 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'token=long-example-secret-for-tests', redirect: 'manual',
     });
     assert.equal(badOrigin.status, 403);
+
+    const proxyRewrittenOrigin = await fetch(`${origin}/login`, {
+      method: 'POST', headers: { Origin: 'https://preview-intermediary.example', 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'token=long-example-secret-for-tests', redirect: 'manual',
+    });
+    assert.equal(proxyRewrittenOrigin.status, 302);
 
     const login = await fetch(`${origin}/login`, {
       method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },
