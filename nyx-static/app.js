@@ -202,6 +202,7 @@ document.addEventListener('error', event => {
   const img = event.target;
   if (img.matches?.('.media-detail-banner')) {
     if (!img.isConnected) return;
+    const backdrop = $('#media-detail-hero .media-detail-banner-backdrop');
     let fallbacks = [];
     try { fallbacks = JSON.parse(img.dataset.fallbacks || '[]'); } catch { /* Invalid artwork is never rendered. */ }
     if (fallbacks.length) {
@@ -210,8 +211,14 @@ document.addEventListener('error', event => {
       img.classList.toggle('is-portrait', next.portrait);
       img.alt = `${selected?.name || 'Series'} promotional artwork`;
       img.src = next.url;
+      if (backdrop) {
+        backdrop.hidden = !next.portrait;
+        if (next.portrait) backdrop.src = next.url;
+        else backdrop.removeAttribute('src');
+      }
     } else {
       img.remove();
+      backdrop?.remove();
       $('#media-detail-hero').classList.add('art-unavailable');
       const note = document.createElement('span');
       note.className = 'artwork-note';
@@ -409,6 +416,7 @@ function renderMediaDetail() {
     selected.score ? `★ ${(selected.score / 10).toFixed(1)} / 10` : ''].filter(Boolean);
   $('#media-detail-hero').classList.toggle('art-unavailable', !firstArtwork);
   $('#media-detail-hero').innerHTML = `
+    ${firstArtwork ? `<img class="media-detail-banner-backdrop" ${firstArtwork.portrait ? `src="${escapeHtml(firstArtwork.url)}"` : 'hidden'} alt="" aria-hidden="true" decoding="async">` : ''}
     ${firstArtwork ? `<img class="media-detail-banner${firstArtwork.portrait ? ' is-portrait' : ''}" src="${escapeHtml(firstArtwork.url)}" data-fallbacks="${escapeHtml(JSON.stringify(fallbackArtwork))}" alt="${escapeHtml(selected.name)} promotional artwork" loading="eager">` : ''}
     <div class="media-detail-hero-copy"><span class="kicker">CRYALUNE / ${escapeHtml(selected.type.toUpperCase())}</span>
       <h2 id="media-detail-title">${escapeHtml(selected.name)}</h2><p>${escapeHtml(metadata.join(' · '))}</p>
