@@ -58,8 +58,11 @@
           <button type="button" class="video-tab" id="tab-test" data-video-tab="test" role="tab" aria-controls="pane-test" aria-selected="false">Test</button>
         </div>
         <div id="pane-anime" data-video-pane="anime" role="tabpanel" aria-labelledby="tab-anime">
-          <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, titles or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
-          <div class="section-title"><h2 id="anime-heading">The anime collection</h2><span class="muted" id="anime-count"></span></div>
+          <section id="anime-feature" class="anime-feature" aria-label="Featured anime" hidden></section>
+          <div class="anime-library-heading">
+            <div><p class="kicker">DISCOVER YOUR NEXT STORY</p><h2 id="anime-heading">The anime collection</h2><span class="muted" id="anime-count"></span></div>
+            <form id="anime-search-form" class="search-bar" role="search"><label class="sr-only" for="anime-query">Search anime</label><span aria-hidden="true">⌕</span><input id="anime-query" type="search" placeholder="Search anime or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
+          </div>
           <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
           <button id="retry-banners" type="button" class="button" hidden>Retry widescreen artwork</button>
           <div id="anime-grid" class="card-grid"></div>
