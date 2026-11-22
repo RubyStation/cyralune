@@ -10,7 +10,9 @@
   <script>try { if (JSON.parse(localStorage.getItem('cyralune-web-v1') || '{}').lowDataMode) document.documentElement.classList.add('low-data-mode'); } catch { /* Storage is optional. */ }</script>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./quiet-theme.css">
+  <link rel="stylesheet" href="./privacy-notice.css">
   <script type="module" src="./app.js"></script>
+  <script defer src="./privacy-notice.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -93,12 +95,43 @@
         <div class="settings-grid"><div class="glass settings-card"><h3>Appearance</h3><label>Accent color<input id="accent-input" type="color" value="#abb0ba"></label><p class="muted">Changes the highlight color across Cryalune.</p></div>
           <div class="glass settings-card"><h3>Low-Data Mode</h3><label class="setting-toggle"><input id="low-data-mode" type="checkbox"> Reduce data usage</label><p class="muted">Show text-only posters and use saved anime results without making new online discovery requests. Your catalog and favorites stay intact.</p></div>
           <div class="glass settings-card"><h3>Backup</h3><p>Export your library, sources, favorites, and progress to a JSON file. Older bookmarked links are retained in backups.</p><div class="button-row"><button id="export-data" class="button">Export backup</button><label class="button file-button">Import backup<input id="import-data" type="file" accept="application/json,.json" hidden></label></div></div>
-          <div class="glass settings-card"><h3>Privacy</h3><p>Media files selected from your computer are not uploaded. Sources and progress remain in this browser unless you export them.</p><button id="clear-progress" class="button danger">Clear watch history</button></div>
+          <div class="glass settings-card"><h3>Privacy</h3><p>Media files selected from your computer are not uploaded. Sources and progress remain in this browser unless you export them.</p><div class="button-row"><button id="privacy-open" class="button" type="button">Privacy &amp; attribution</button><button id="clear-progress" class="button danger">Clear watch history</button></div></div>
         </div>
       </section>
-      <footer>CRYALUNE <span>·</span> THE LUNAR CINEMA <span>·</span> YOUR COLLECTION, YOUR PACE</footer>
+      <footer>CRYALUNE <span>·</span> THE LUNAR CINEMA <span>·</span> YOUR COLLECTION, YOUR PACE <span>·</span> <button type="button" id="privacy-footer" class="footer-privacy">Privacy &amp; attribution</button></footer>
     </main>
   </div>
+
+  <dialog id="privacy-notice" class="privacy-dialog" aria-labelledby="privacy-title" aria-describedby="privacy-intro">
+    <div class="privacy-dialog__inner">
+      <p class="privacy-dialog__eyebrow">Cryalune · Privacy &amp; independence</p>
+      <h2 id="privacy-title">Privacy &amp; attribution</h2>
+      <p id="privacy-intro" class="privacy-dialog__intro">Welcome to Cryalune. Here is how this site handles saved preferences, outside services, and third-party names.</p>
+      <div class="privacy-dialog__body">
+        <section aria-labelledby="privacy-local-title">
+          <h3 id="privacy-local-title">What stays on your device</h3>
+          <p>Your favorites, watch progress, settings, saved video-source links, and cached catalog information are stored in this browser. Videos you select using “Use local video” play from your device and are not uploaded by Cryalune. You can export a backup or clear watch history from Settings.</p>
+        </section>
+        <section aria-labelledby="privacy-services-title">
+          <h3 id="privacy-services-title">Outside services</h3>
+          <p>When online discovery is enabled, Cryalune may contact AniList for anime listings and artwork. If you select an external video source, your browser connects to that provider, which may process your IP address and other connection information under its own privacy policy. The website hosting service may also process standard request logs. Low-Data Mode reduces optional online discovery requests.</p>
+        </section>
+        <section aria-labelledby="privacy-independence-title">
+          <h3 id="privacy-independence-title">Not affiliated with AnimePahe</h3>
+          <p>Cryalune is an independent project. It is not operated by, affiliated with, sponsored by, or endorsed by AnimePahe. References to AnimePahe or other providers are for identification only. Their brands, videos, and services remain their respective owners’ property; a credit or disclaimer does not authorize copying or rehosting their content.</p>
+        </section>
+        <section aria-labelledby="privacy-choice-title">
+          <h3 id="privacy-choice-title">Your choices</h3>
+          <p>You can revisit this notice from Settings or the page footer. Clicking “I understand” only records that this notice has been shown; it is not consent to third-party tracking. Browser storage can be cleared using your browser’s site-data controls.</p>
+        </section>
+      </div>
+      <div class="privacy-dialog__actions">
+        <button id="privacy-acknowledge" type="button" class="button primary">I understand</button>
+        <button id="privacy-dismiss" type="button" class="button">Close</button>
+      </div>
+      <p class="privacy-dialog__updated">Updated November 22, 2026</p>
+    </div>
+  </dialog>
 
   <dialog id="media-detail-dialog" class="media-detail-dialog" aria-labelledby="media-detail-title">
     <button id="media-detail-close" type="button" class="media-detail-close" aria-label="Close title details">×</button>
