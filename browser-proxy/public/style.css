@@ -1,0 +1,42 @@
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b111c;color:#edf0fa}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+button,input{font:inherit}
+button{cursor:pointer}
+.shell{min-height:100vh;display:flex;flex-direction:column;gap:14px;max-width:1700px;margin:auto;padding:16px 24px 22px}
+.masthead{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:45px}
+.brand{display:flex;align-items:center;gap:13px;font-size:18px;font-weight:800;letter-spacing:.2em}
+.brand small{display:block;color:#b8a8d9;font-size:10px;letter-spacing:.26em;margin-top:2px;font-weight:600}
+.moon{color:#b6a5fa;font-size:29px;line-height:1}
+.header-right{display:flex;align-items:center;gap:20px}
+.lab-label{color:#9faabc;font-size:11px;letter-spacing:.16em}
+.logout{border:1px solid #465371;background:transparent;color:#c5cbe0;border-radius:9px;padding:8px 12px}
+.browser{display:flex;flex-direction:column;flex:1;min-height:500px;border-radius:16px;border:1px solid #3c4762;background:#111a2b;overflow:hidden;box-shadow:0 16px 60px #0005}
+.tabs{display:flex;gap:3px;min-height:42px;background:#131a2a;padding:6px 8px 0;overflow-x:auto}
+.tab{border:1px solid transparent;border-bottom:0;background:#1b2538;color:#aeb8cb;border-radius:9px 9px 0 0;min-width:110px;max-width:220px;padding:6px 9px 6px 14px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.tab.active{border-color:#404d6b;color:#f4f2ff;background:#252f46}
+.tab-label{text-overflow:ellipsis;white-space:nowrap;overflow:hidden;font-size:12px}
+.tab-close{font-size:19px;color:#abb9cd;padding:0 4px;border-radius:5px}
+.tab-close:hover{background:#404d66}
+.toolbar{display:flex;align-items:center;gap:8px;background:#252f46;border-bottom:1px solid #4b5672;padding:9px}
+.toolbar>button{flex:0 0 auto;width:34px;height:36px;border:1px solid #485472;border-radius:9px;background:#1c2538;color:#ced7eb;font-size:24px;line-height:1}
+.toolbar>button:hover,.logout:hover{background:#3b4764}
+#address-form{min-width:80px;flex:1;display:flex;align-items:center;gap:8px;background:#11192b;border:1px solid #56617b;border-radius:11px;height:38px;padding:0 5px 0 11px}
+.shield{color:#bcb1ff;font-size:22px}
+#address{flex:1;width:30px;outline:none;border:0;background:transparent;color:#f1f1fa;font-size:13px}
+#address::placeholder{color:#8591a7}
+.go{color:#fff;background:#665d9d;border:0;border-radius:7px;padding:7px 13px;font-size:12px}
+.go:hover{background:#8379b7}
+.status{background:#182237;border-bottom:1px solid #313d57;color:#9fbed2;padding:8px 17px;font-size:11px;min-height:31px}
+.status.error{color:#ffb0ae}
+.viewport{position:relative;background:#0e1523;min-height:420px;flex:1;display:flex;overflow:hidden}
+.proxy-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:white}
+.welcome{margin:auto;text-align:center;padding:3rem 1rem;max-width:630px}
+.welcome[hidden]{display:none}
+.moon-graphic{font-size:84px;font-weight:200;line-height:1;color:#8e80d2;text-shadow:0 0 55px #7e6de4bb;margin-bottom:14px}
+.welcome h1{font-size:clamp(25px,4vw,36px);margin:0 0 12px;letter-spacing:-.04em}
+.welcome p{color:#a5b3c8;line-height:1.65;margin:0 0 20px}
+.hint{color:#8b9db9;font-size:13px}
+.hint button{background:transparent;border:0;border-bottom:1px solid #9894db;color:#c1b7ff;padding:0 2px}
+footer{color:#8b96a9;font-size:11px;line-height:1.5;text-align:center}
+@media(max-width:680px){.shell{padding:6px;gap:7px}.brand{font-size:12px}.brand small{font-size:8px}.lab-label{display:none}.toolbar{gap:4px;padding:5px}.toolbar>button{width:28px;font-size:19px}.go{padding:7px}.welcome{padding:20px 12px}}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cryalune | Browser Relay Lab</title>
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/scram/scramjet.all.js" defer></script>
+  <script src="/baremux/index.js" defer></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand"><span class="moon">◉</span><span>CRYALUNE <small>RELAY LAB</small></span></div>
+      <div class="header-right"><span class="lab-label">LOCAL TEST BUILD</span><form method="post" action="/logout"><button class="logout" type="submit">Lock</button></form></div>
+    </header>
+    <section class="browser" aria-label="Browser proxy prototype">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Proxy tabs"></div>
+      <div class="toolbar">
+        <button id="back" title="Back" aria-label="Back">‹</button>
+        <button id="forward" title="Forward" aria-label="Forward">›</button>
+        <button id="reload" title="Reload" aria-label="Reload">↻</button>
+        <form id="address-form" autocomplete="off">
+          <span class="shield" title="Pages are relayed through your own Wisp server">◇</span>
+          <input id="address" aria-label="Website address or search" spellcheck="false" placeholder="Enter a URL or search" value="https://example.com">
+          <button type="submit" class="go">Go</button>
+        </form>
+        <button id="new-tab" title="New tab" aria-label="New tab">＋</button>
+      </div>
+      <div class="status" id="status" role="status">Initializing the browser relay…</div>
+      <div class="viewport" id="viewport">
+        <div class="welcome" id="welcome">
+          <div class="moon-graphic">◉</div>
+          <h1>A browser inside Cryalune.</h1>
+          <p>Experimental Scramjet frontend + self-hosted Wisp relay. This is a separate test application; your live anime site is unchanged.</p>
+          <div class="hint">Try an ordinary public page such as <button id="try-example" type="button">example.com</button>.</div>
+        </div>
+      </div>
+    </section>
+    <footer>Some websites, DRM players, login flows, and browser features may not work. The relay does not provide anime streams or permission to access protected content.</footer>
+  </main>
+</body>
+</html>
