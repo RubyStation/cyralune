@@ -197,6 +197,55 @@ function itemCard(item) {
     <div class="media-caption"><strong>${name}</strong><small>${escapeHtml(subtitle)}</small>${item.genre ? `<span class="genre-label">${escapeHtml(item.genre)}</span>` : ''}</div></button>`;
 }
 
+// Anime Center uses a poster-first layout. The other pages retain their
+// existing cards and captions, so saved favorites and watch history are intact.
+function animePosterCard(item) {
+  const name = escapeHtml(item.name);
+  const thumbnail = data.lowDataMode ? '' : trustedCover(item.cover);
+  const hd = data.lowDataMode ? '' : trustedCover(item.detailCover);
+  const image = hd || thumbnail;
+  const fallback = hd && thumbnail && hd !== thumbnail ? ` data-fallback="${escapeHtml(thumbnail)}"` : '';
+  const episodeCount = Number.isInteger(item.episodes) && item.episodes > 0 ? item.episodes : 0;
+  return `<button type="button" class="anime-poster-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}${episodeCount ? `, ${episodeCount} episodes` : ''}">
+    <span class="anime-poster-placeholder" aria-hidden="true">${name}</span>
+    ${image ? `<img src="${escapeHtml(image)}"${fallback} alt="" loading="lazy" decoding="async">` : ''}
+    ${episodeCount ? `<span class="anime-episode-badge">EP ${episodeCount}</span>` : ''}
+    <span class="anime-poster-title">${name}</span>
+  </button>`;
+}
+
+function renderAnimeFeature(items) {
+  const container = $('#anime-feature');
+  const featured = items.find(item => normalizedTitle(item.name) === 'jujutsukaisen');
+  const banner = featured && wideBanner(featured);
+  // The featured artwork is a browsing highlight, not a search result or a
+  // reason to download images while Low-Data Mode is active.
+  if (!featured || !banner || data.lowDataMode || $('#anime-query').value.trim()) {
+    container.hidden = true;
+    container.replaceChildren();
+    return;
+  }
+  const name = escapeHtml(featured.name);
+  const detailCover = trustedCover(featured.detailCover) || trustedCover(featured.cover);
+  const fallback = detailCover ? ` data-fallback="${escapeHtml(detailCover)}"` : '';
+  const score = Number.isFinite(featured.score) && featured.score > 0 ? `${(featured.score / 10).toFixed(1)}/10` : '';
+  const metadata = [score, featured.year || '', featured.format || 'Anime'].filter(Boolean).join(' · ');
+  const description = featured.description || 'Explore the story, browse episodes, and discover your next favorite anime.';
+  container.innerHTML = `
+    <img class="anime-feature-image" src="${escapeHtml(banner)}"${fallback} alt="" decoding="async" fetchpriority="high">
+    <div class="anime-feature-content">
+      <span class="anime-feature-eyebrow">✦ FEATURED ANIME</span>
+      <h2>${name}</h2>
+      <p class="anime-feature-meta">${escapeHtml(metadata)}</p>
+      <p class="anime-feature-description">${escapeHtml(description)}</p>
+      <div class="anime-feature-actions">
+        <button class="anime-feature-watch" type="button" data-action="feature-watch" data-id="${escapeHtml(featured.id)}"><span aria-hidden="true">▶</span> Watch</button>
+        <button class="anime-feature-info" type="button" data-action="detail" data-id="${escapeHtml(featured.id)}"><span aria-hidden="true">ⓘ</span> More info</button>
+      </div>
+    </div>`;
+  container.hidden = false;
+}
+
 // Prefer the local thumbnail if a HD image cannot load. Keep the text if both fail.
 document.addEventListener('error', event => {
   const img = event.target;
@@ -227,7 +276,7 @@ document.addEventListener('error', event => {
     }
     return;
   }
-  if (!img.matches?.('.poster img, .detail-poster img')) return;
+  if (!img.matches?.('.poster img, .detail-poster img, .anime-poster-card img, .anime-feature-image')) return;
   if (img.dataset.fallback) {
     const fallback = img.dataset.fallback;
     img.removeAttribute('data-fallback');
@@ -258,6 +307,12 @@ function renderAnime(items, {resetPage = false} = {}) {
   findWideBanners(items);
   const offlineFallback = data.lowDataMode || bannerLookupUnavailable || Boolean(bannerWorker);
   displayedAnime = visibleAnime(items, {offline:offlineFallback,hasBanner:item => Boolean(wideBanner(item))});
+  // Show available local poster artwork first when the network is restricted.
+  // Search results keep their natural relevance order.
+  if (!$('#anime-query').value.trim()) displayedAnime.sort((a,b) =>
+    Number(Boolean(trustedCover(b.detailCover) || trustedCover(b.cover))) -
+    Number(Boolean(trustedCover(a.detailCover) || trustedCover(a.cover))));
+  renderAnimeFeature(items);
   if (resetPage) animePage = 1;
   const totalPages = Math.max(1, Math.ceil(displayedAnime.length / ANIME_PAGE_SIZE));
   animePage = Math.min(animePage, totalPages);
@@ -267,7 +322,7 @@ function renderAnime(items, {resetPage = false} = {}) {
     : pendingWideBanners.size || bannerWorker ? 'Finding widescreen artwork for the collection…'
     : items.length ? 'No matching series have a verified wide banner yet. Titles without banners are hidden, not deleted.'
     : 'No matching anime found. Try another title or genre.';
-  $('#anime-grid').innerHTML = visible.length ? visible.map(itemCard).join('') : `<div class="empty-state">${emptyMessage}</div>`;
+  $('#anime-grid').innerHTML = visible.length ? visible.map(animePosterCard).join('') : `<div class="empty-state">${emptyMessage}</div>`;
   $('#anime-count').textContent = offlineFallback ? `${displayedAnime.length} saved titles · offline` : `${displayedAnime.length} with banners`;
   $('#anime-pagination').hidden = totalPages === 1;
   $('#anime-page-info').textContent = `Page ${animePage} of ${totalPages}`;
@@ -802,6 +857,10 @@ document.addEventListener('click', event => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === 'detail') openDetails(button.dataset.id);
+  if (action === 'feature-watch') {
+    openDetails(button.dataset.id);
+    if (selected?.episodes > 0) openPlayer(1);
+  }
   if (action === 'play') openPlayer(Number(button.dataset.episode) || 1);
   if (action === 'episode-mark' && selected) {
     const episode = Number(button.dataset.episode);
