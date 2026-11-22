@@ -356,3 +356,127 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
 @media(prefers-reduced-motion:reduce) {
   .video-tab,.button,.rail-nav a {transition:none}
 }
+
+/* Anime Center — featured cinematic artwork and an image-first poster wall. */
+.anime-feature {
+  position:relative;isolation:isolate;min-height:clamp(350px,36vw,465px);
+  margin:8px 0 28px;overflow:hidden;border-radius:19px;
+  background:linear-gradient(110deg,#070a13,#263754 72%,#121923);
+  border:1px solid #ffffff16;
+}
+.anime-feature[hidden] {display:none}
+.anime-feature-image {
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:center 43%;filter:none;
+}
+.anime-feature:after {
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,#050918ed 0%,#081124c9 23%,#0b16366c 52%,#0b18301a 90%),
+    linear-gradient(0deg,#080b1bcd 0%,transparent 72%);
+}
+.anime-feature-content {
+  position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;
+  justify-content:flex-end;min-height:clamp(350px,36vw,465px);
+  padding:clamp(24px,4vw,49px);max-width:min(680px,68%);
+}
+.anime-feature-eyebrow {
+  display:inline-flex;align-items:center;gap:7px;color:#dbe5fc;font-size:12px;
+  font-weight:800;letter-spacing:.18em;margin-bottom:11px;
+}
+.anime-feature h2 {
+  font-family:Impact,"Arial Black",ui-sans-serif,sans-serif;text-transform:uppercase;
+  font-size:clamp(42px,5.4vw,77px);letter-spacing:.025em;line-height:1;
+  color:#fff;margin:0 0 12px;text-shadow:0 3px 22px #000e;
+}
+.anime-feature-meta {font-size:13px;color:#cdd7ef;font-weight:650;letter-spacing:.05em;margin:0 0 13px}
+.anime-feature-description {
+  color:#e7eafa;font-size:14px;line-height:1.65;max-width:565px;
+  margin:0 0 23px;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px #000b;
+}
+.anime-feature-actions {display:flex;gap:12px;flex-wrap:wrap}
+.anime-feature-actions button {
+  border:0;border-radius:12px;min-height:46px;padding:10px 21px;
+  font-weight:800;font-size:14px;transition:transform .18s,background .18s;
+}
+.anime-feature-actions button:hover {transform:translateY(-2px)}
+.anime-feature-watch {background:#f5a30c;color:#110e0a;box-shadow:0 5px 24px #0004}
+.anime-feature-watch:hover {background:#ffb62e}
+.anime-feature-info {color:#fff;background:#c9d7ee26;border:1px solid #ffffff2b!important;backdrop-filter:blur(12px)}
+.anime-feature-info:hover {background:#d7e4ff3f}
+.anime-feature-actions button span {margin-right:7px}
+.anime-library-heading {
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;margin:19px 0 16px;
+}
+.anime-library-heading .kicker {font-size:10px;letter-spacing:.19em;margin:0 0 5px;color:#a7b1c5}
+.anime-library-heading h2 {margin:0 0 5px;font-size:clamp(22px,2.7vw,28px);line-height:1.16;letter-spacing:-.03em}
+.anime-library-heading .search-bar {
+  flex:0 1 440px;width:100%;min-height:46px;padding:6px 7px 6px 15px;
+  background:#151922;border-color:#ffffff21;border-radius:14px;
+}
+.anime-library-heading .search-bar>span {font-size:23px;line-height:1}
+.anime-library-heading .search-bar input {font-size:14px}
+.anime-library-heading .search-bar .button {min-height:35px;padding:6px 15px}
+#anime-grid {grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}
+.anime-poster-card {
+  display:block;position:relative;aspect-ratio:.69;min-width:0;overflow:hidden;
+  border-radius:14px;padding:0;border:1px solid #ffffff21;
+  color:#fff;text-align:left;background:radial-gradient(circle at 50% 20%,#323a51,#161b29 70%);
+  box-shadow:0 10px 28px #0005;isolation:isolate;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.anime-poster-card:hover,.anime-poster-card:focus-visible {
+  transform:translateY(-5px);border-color:#f5a30c8a;box-shadow:0 17px 40px #0009;
+}
+.anime-poster-card img {
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:center top;image-rendering:auto;z-index:0;
+}
+.anime-poster-card:after {
+  content:"";position:absolute;inset:25% 0 0;z-index:1;pointer-events:none;
+  background:linear-gradient(0deg,#02040bdc 0%,#02040b32 30%,transparent 66%);
+}
+.anime-poster-placeholder {
+  position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+  padding:18px;color:#bfc9dd;font-size:19px;font-weight:750;line-height:1.2;
+}
+.anime-episode-badge {
+  position:absolute;top:9px;left:9px;z-index:2;padding:5px 8px;
+  background:#0a1028c9;border:1px solid #ffffff35;border-radius:7px;
+  color:white;font-size:11px;font-weight:900;letter-spacing:.07em;
+  box-shadow:0 2px 10px #0005;
+}
+.anime-poster-title {
+  position:absolute;z-index:2;bottom:10px;left:11px;right:10px;
+  color:#fff;font-size:13px;font-weight:800;line-height:1.25;
+  text-shadow:0 2px 10px #000,0 2px 3px #000a;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+#pane-anime #anime-status {min-height:0;margin:0 0 12px;font-size:12px;color:#a4aab8}
+@media(max-width:1180px) {
+  #anime-grid {grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+}
+@media(max-width:960px) {
+  #anime-grid {grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+}
+@media(max-width:780px) {
+  .anime-feature-content {max-width:84%}
+  #anime-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+}
+@media(max-width:700px) {
+  .anime-feature,.anime-feature-content {min-height:350px}
+  .anime-feature {margin:3px 0 24px;border-radius:15px}
+  .anime-feature-content {max-width:100%;padding:24px 22px}
+  .anime-feature:after {background:linear-gradient(0deg,#050815f5 0%,#0a102dd9 35%,#0d17355c 100%)}
+  .anime-feature-image {object-position:center 45%}
+  .anime-feature h2 {font-size:clamp(37px,10vw,55px)}
+  .anime-feature-description {font-size:13px;-webkit-line-clamp:2}
+  .anime-library-heading {gap:14px}
+  .anime-library-heading .search-bar {flex:1 1 100%}
+  #anime-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  .anime-poster-title {font-size:12px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .anime-poster-card,.anime-feature-actions button {transition:none}
+}
