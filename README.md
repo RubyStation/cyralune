@@ -20,9 +20,12 @@ static frontend.
   with high-resolution copies for their detail views. The other 76 poster-backed
   anime also have locally stored thumbnails and HD artwork.
 - Full-width series artwork in title selection: a verified AniList widescreen
-  banner when it loads, or that series' own poster rendered as a cinematic
-  backdrop if AniList is blocked. Prior verified banner results persist between
-  visits. Low-Data Mode deliberately hides image downloads.
+  banner when it loads, or that series' own poster when unavailable.
+  Source-verified TVmaze landscapes at 1,880+ pixels wide are preferred and
+  cached locally wherever available, with no dependency on AniList loading.
+  The remaining series show sharp portraits in the right side of the hero
+  instead of stretched/blurred poster backgrounds. Low-Data Mode still hides
+  artwork downloads by design.
 - A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
 - An original short demo MP4 and caption file so you can test the player.
 - A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
@@ -100,6 +103,13 @@ The original seven local poster pairs can be refreshed from TVmaze with
 `node scripts/cache-anvil-posters.mjs` when building the site. This requires
 ImageMagick and internet access on the development computer, not on the viewer's
 Chromebook. The site itself never makes those TVmaze image requests.
+
+To audit original poster and landscape source resolutions, run
+`node scripts/upgrade-anime-artwork.mjs --audit`. To refresh genuine source
+posters at least 1,880 pixels wide and source-backed landscape banners, run
+`node scripts/upgrade-anime-artwork.mjs --download`. That script updates the
+local banner manifest and never upscales a lower-resolution file to pass the
+1,880-pixel threshold. Not every catalog title has a qualifying source image.
 
 ## Provenance and permissions
 

@@ -3,6 +3,7 @@ import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
 import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache, visibleAnime} from './banner-catalog.js';
+import {LOCAL_BANNERS} from './local-banner-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -40,7 +41,7 @@ let bannerWorker = null, bannerLookupUnavailable = false;
 function wideBanner(item) {
   if (!item) return '';
   const key = normalizedTitle(item.name);
-  return wideBanners.get(key) || verifiedBanner(item.name, {title:{english:item.name},bannerImage:item.banner}) || '';
+  return LOCAL_BANNERS[key] || wideBanners.get(key) || verifiedBanner(item.name, {title:{english:item.name},bannerImage:item.banner}) || '';
 }
 
 function rememberWideBanner(name, url) {

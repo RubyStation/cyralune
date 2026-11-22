@@ -95,11 +95,14 @@ footer span {color:#a9adb5}
   filter:saturate(.88) contrast(1.04);opacity:.98;
 }
 .media-detail-banner.is-portrait {
-  /* When AniList is blocked, use this show's own cached poster as a full-bleed
-     backdrop. Never substitute the same generic banner for every title. */
-  object-position:center 26%;
-  filter:blur(6px) saturate(.9) contrast(1.1) brightness(.8);
-  transform:scale(1.06);
+  /* A portrait is not a widescreen banner. Keep it sharp and at its natural
+     proportions instead of zooming and blurring low-resolution pixels. */
+  inset:0 0 0 auto;
+  width:min(45%,380px);
+  object-fit:contain;
+  object-position:center right;
+  filter:none;
+  opacity:.95;
 }
 .media-detail-hero.art-unavailable {
   background:radial-gradient(ellipse at 70% 20%,#39414e 0%,#202633 52%,#101318 100%);
