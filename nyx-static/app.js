@@ -31,9 +31,18 @@ function applyAccent() { document.documentElement.style.setProperty('--accent', 
 applyAccent();
 
 const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites'};
+const videoTabContent = {
+  anime: ['Anime', 'Browse the restored Anvil collection or search for a title.'],
+  movies: ['Movies', 'Your films and their available sources.'],
+  shows: ['TV Shows', 'Keep every series and episode together.'],
+  favorites: ['My Favorites', 'Titles you have saved to return to later.']
+};
 function selectVideoTab(tab) {
-  if (!['anime', 'movies', 'shows', 'favorites'].includes(tab)) tab = 'anime';
+  if (!Object.hasOwn(videoTabContent, tab)) tab = 'anime';
   activeVideoTab = tab;
+  const [heading, description] = videoTabContent[tab];
+  $('#videos-heading').textContent = heading;
+  $('#videos-description').textContent = description;
   $$('[data-video-tab]').forEach(button => {
     const active = button.dataset.videoTab === tab;
     button.classList.toggle('active', active);

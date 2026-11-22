@@ -49,7 +49,7 @@
       </section>
 
       <section data-view="videos" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE COLLECTION</p><h1>Videos</h1><p>Everything you love to watch, gathered in one calm place.</p></div>
+        <div class="page-intro"><p class="kicker">THE COLLECTION</p><h1 id="videos-heading">Anime</h1><p id="videos-description">Browse the restored Anvil collection or search for a title.</p></div>
         <div class="video-tabs" role="tablist" aria-label="Video categories">
           <button type="button" class="video-tab active" id="tab-anime" data-video-tab="anime" role="tab" aria-controls="pane-anime" aria-selected="true">Anime</button>
           <button type="button" class="video-tab" id="tab-movies" data-video-tab="movies" role="tab" aria-controls="pane-movies" aria-selected="false">Movies</button>
@@ -57,22 +57,18 @@
           <button type="button" class="video-tab" id="tab-favorites" data-video-tab="favorites" role="tab" aria-controls="pane-favorites" aria-selected="false">♡ My Favorites</button>
         </div>
         <div id="pane-anime" data-video-pane="anime" role="tabpanel" aria-labelledby="tab-anime">
-          <div class="video-pane-heading"><h2>Anime library</h2><p>Browse the restored Anvil collection or search for a title.</p></div>
           <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, such as Jujutsu Kaisen" maxlength="100"><button class="button primary" type="submit">Search</button></form>
           <div class="section-title"><h2 id="anime-heading">The Anvil collection</h2><span class="muted" id="anime-count"></span></div>
           <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
           <div id="anime-grid" class="card-grid"></div>
         </div>
         <div id="pane-movies" data-video-pane="movies" role="tabpanel" aria-labelledby="tab-movies" hidden>
-          <div class="video-pane-heading"><h2>Movies</h2><p>Your films and their available sources.</p></div>
           <button class="button primary add-title" data-type="movie">＋ Add movie</button><div id="movie-grid" class="card-grid spaced"></div>
         </div>
         <div id="pane-shows" data-video-pane="shows" role="tabpanel" aria-labelledby="tab-shows" hidden>
-          <div class="video-pane-heading"><h2>TV Shows</h2><p>Keep every series and episode together.</p></div>
           <button class="button primary add-title" data-type="tv">＋ Add TV show</button><div id="tv-grid" class="card-grid spaced"></div>
         </div>
         <div id="pane-favorites" data-video-pane="favorites" role="tabpanel" aria-labelledby="tab-favorites" hidden>
-          <div class="video-pane-heading"><h2>My Favorites</h2><p>Titles you have saved to return to later.</p></div>
           <div id="list-grid" class="card-grid"></div>
         </div>
       </section>

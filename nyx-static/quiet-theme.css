@@ -163,10 +163,6 @@ body:has(.view[data-view="home"]:not([hidden])) {
   color:#f2f2f3;
   box-shadow:0 2px 9px #0005;
 }
-.video-pane-heading {margin:4px 0 25px}
-.video-pane-heading h2 {margin:0 0 7px;font-weight:650;font-size:clamp(25px,3vw,36px);letter-spacing:-.035em}
-.video-pane-heading p {margin:0;color:#aaadb5;font-size:14px}
-
 @media(max-width:700px) {
   .rail {background:#101319f4;border-top-color:#ffffff24}
   .rail-nav a {min-height:55px}
