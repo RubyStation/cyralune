@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <title>Cyralune — First Launch</title>
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="box-sizing:border-box;min-height:100vh;margin:0;padding:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at top,#22223b 0%,#090912 70%);color:#f5f1ff;font-family:system-ui,-apple-system,sans-serif;">
+      <div style="font-size:64px;color:#c8b8ff;line-height:1;">☾</div>
+      <h1 style="font-size:36px;font-weight:600;letter-spacing:0.2em;margin:20px 0 10px;">CYRALUNE</h1>
+      <p style="font-size:14px;letter-spacing:0.2em;color:#b4a9d2;margin:0 0 28px;">THE LUNAR CINEMA</p>
+      <p id="status" role="status" style="font-size:16px;max-width:520px;color:#ded8ed;">Preparing your first launch…</p>
+      <p style="font-size:13px;color:#aaa1be;max-width:460px;line-height:1.6;">This starter prepares this browser to open Cyralune from its normal jsDelivr link.</p>
+    </div>
+  </foreignObject>
+  <script><![CDATA[
+    (async () => {
+      const status = document.getElementById("status");
+      if (location.protocol !== "https:" || !navigator.serviceWorker) {
+        throw new Error("This starter requires HTTPS and a browser that supports service workers.");
+      }
+
+      const scope = "/gh/RubyStation/cyralune@main/nyx-static/";
+      const workerUrl = new URL("cyralune-worker.js", location.href);
+      await navigator.serviceWorker.register(workerUrl.href, {
+        scope,
+        updateViaCache: "none",
+      });
+
+      await navigator.serviceWorker.ready;
+
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            reject(new Error("The browser did not finish setup. Reload this starter to retry."));
+          }, 15000);
+          const controlled = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          navigator.serviceWorker.addEventListener("controllerchange", controlled, { once: true });
+          if (navigator.serviceWorker.controller) controlled();
+        });
+      }
+
+      status.textContent = "Opening Cyralune…";
+      location.replace(new URL("studies.html", location.href).href);
+    })().catch((error) => {
+      document.getElementById("status").textContent = "Setup could not finish: " + error.message;
+    });
+  ]]></script>
+</svg>
