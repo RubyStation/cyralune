@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {safeUrl, cleanText, escapeHtml, normalizedSource, playableEmbedUrl, sortedSources,
   defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups} from '../nyx-static/core.js';
+import {normalizedTitle, bannerQuery, verifiedBanner} from '../nyx-static/banner-catalog.js';
 
 if (!globalThis.crypto) globalThis.crypto = {randomUUID: () => 'test-uuid'};
 
@@ -74,6 +75,19 @@ test('episode selector uses true seasons or accurate episode groups', () => {
   ]);
   assert.equal(episodeGroups(50,[{start:1,end:50},{start:25,end:50}]).length,3);
   assert.deepEqual(episodeGroups(0),[]);
+});
+
+test('wide banners are distinct from covers and must match the series', () => {
+  const record = {title:{english:'Demon Slayer: Kimetsu no Yaiba',romaji:'Kimetsu no Yaiba'},
+    bannerImage:'https://s4.anilist.co/file/anilistcdn/media/anime/banner/sample.jpg'};
+  assert.equal(normalizedTitle('JoJo’s Bizarre Adventure'),normalizedTitle("JoJo's Bizarre Adventure"));
+  assert.equal(verifiedBanner('Demon Slayer: Kimetsu no Yaiba',record),record.bannerImage);
+  assert.equal(verifiedBanner('Naruto',record),'');
+  assert.equal(verifiedBanner('Demon Slayer: Kimetsu no Yaiba',{...record,startDate:{year:2019}},2005),'');
+  assert.equal(verifiedBanner('Demon Slayer: Kimetsu no Yaiba',{...record,bannerImage:null}),'');
+  assert.equal(verifiedBanner('Demon Slayer: Kimetsu no Yaiba',{...record,bannerImage:'https://example.org/banner.jpg'}),'');
+  assert.match(bannerQuery(['Naruto', 'Doraemon']),/b1: Media\(search: "Doraemon"/);
+  assert.equal(bannerQuery([]),'');
 });
 
 test('invalid backup fields are constrained when restored', () => {

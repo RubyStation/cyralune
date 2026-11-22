@@ -2,6 +2,7 @@ import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSou
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
+import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner} from './banner-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -27,6 +28,80 @@ let hlsLibraryPromise = null;
 let activeVideoTab = 'anime', lastRenderedPage = '', detailReturnPage = 'videos', detailReturnTab = 'anime';
 const video = $('#video');
 const embed = $('#embed');
+const wideBanners = new Map();
+try {
+  const cached = JSON.parse(localStorage.getItem(BANNER_CACHE_KEY) || '{}');
+  if (cached && typeof cached === 'object' && !Array.isArray(cached)) {
+    for (const [name, url] of Object.entries(cached).slice(0, 400)) {
+      if (name.length < 140 && verifiedBanner(name, {title:{english:name},bannerImage:url})) wideBanners.set(name,url);
+    }
+  }
+} catch { /* An unavailable cache never prevents the collection from opening. */ }
+const missingWideBanners = new Set();
+const pendingWideBanners = new Map();
+let bannerWorker = null, bannerLookupUnavailable = false;
+
+function wideBanner(item) {
+  if (!item) return '';
+  const key = normalizedTitle(item.name);
+  return wideBanners.get(key) || verifiedBanner(item.name, {title:{english:item.name},bannerImage:item.banner}) || '';
+}
+
+function rememberWideBanner(name, url) {
+  const key = normalizedTitle(name);
+  if (!key || !url) return;
+  wideBanners.set(key,url);
+  try { localStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(Object.fromEntries(wideBanners))); }
+  catch { /* Artwork still works for this browser session. */ }
+}
+
+function findWideBanners(items) {
+  if (data.lowDataMode || bannerLookupUnavailable) return;
+  for (const item of items) {
+    if (item.type !== 'anime' || wideBanner(item)) continue;
+    const key = normalizedTitle(item.name);
+    if (key && !missingWideBanners.has(key) && !pendingWideBanners.has(key)) pendingWideBanners.set(key,item);
+  }
+  if (!bannerWorker && pendingWideBanners.size) {
+    bannerWorker = resolveWideBanners().finally(() => {
+      bannerWorker = null;
+      if (pendingWideBanners.size && !bannerLookupUnavailable && !data.lowDataMode) findWideBanners(animeResults);
+    });
+  }
+}
+
+async function resolveWideBanners() {
+  while (pendingWideBanners.size && !data.lowDataMode) {
+    const batch = [...pendingWideBanners.entries()].slice(0, 12);
+    for (const [key] of batch) pendingWideBanners.delete(key);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 9500);
+    try {
+      const response = await fetch('https://graphql.anilist.co', {
+        method:'POST', signal:controller.signal, headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({query:bannerQuery(batch.map(([,item]) => item.name))})
+      });
+      if (!response.ok) throw Error(`Banner lookup returned ${response.status}`);
+      const payload = await response.json();
+      if (!payload?.data) throw Error('Banner data is unavailable');
+      batch.forEach(([key,item],index) => {
+        const url = verifiedBanner(item.name,payload.data[`b${index}`],item.year);
+        if (url) rememberWideBanner(item.name,url);
+        else missingWideBanners.add(key);
+      });
+      $('#retry-banners').hidden = true;
+      renderAnime(animeResults);
+      renderHomeProgress();
+      renderFavorites();
+    } catch {
+      bannerLookupUnavailable = true;
+      $('#retry-banners').hidden = false;
+      pendingWideBanners.clear();
+      if (animeResults.length) renderAnime(animeResults);
+      break;
+    } finally { clearTimeout(timeout); }
+  }
+}
 
 function status(message, error = false) {
   const el = $('#player-dialog').open ? $('#player-status') : $('#anime-status');
@@ -108,6 +183,11 @@ function itemCard(item) {
 // Prefer the local thumbnail if a HD image cannot load. Keep the text if both fail.
 document.addEventListener('error', event => {
   const img = event.target;
+  if (img.matches?.('.media-detail-banner')) {
+    img.remove();
+    $('#media-source-note').textContent = 'This artwork could not load on the current network. The series has not been deleted.';
+    return;
+  }
   if (!img.matches?.('.poster img, .detail-poster img')) return;
   if (img.dataset.fallback) {
     const fallback = img.dataset.fallback;
@@ -127,7 +207,8 @@ function renderHomeProgress() {
   const recentIds = [...new Set(Object.entries(data.progress).filter(([, v]) => v && v.time > 0)
     .sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).map(([key]) => key.replace(/:e\d+$/, '')))].slice(0, 6);
   const items = recentIds.map(id => catalog.get(id) || {id, name: data.progress[Object.keys(data.progress).find(k => k.startsWith(id + ':e'))]?.title || id, type:'anime'});
-  $('#home-progress').innerHTML = items.length ? items.map(itemCard).join('') : `<div class="empty-state">Nothing watched yet. Start with the original demo reel or add a source to an episode.</div>`;
+  const visible = items.filter(item => item.type !== 'anime' || wideBanner(item));
+  $('#home-progress').innerHTML = visible.length ? visible.map(itemCard).join('') : `<div class="empty-state">Nothing with a verified banner to continue yet. Your viewing progress is still saved.</div>`;
 }
 
 const ANIME_PAGE_SIZE = 20;
@@ -135,13 +216,19 @@ let animePage = 1;
 let animeResults = [];
 function renderAnime(items, {resetPage = false} = {}) {
   animeResults = items;
+  findWideBanners(items);
+  const bannered = items.filter(item => Boolean(wideBanner(item)));
   if (resetPage) animePage = 1;
-  const totalPages = Math.max(1, Math.ceil(items.length / ANIME_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(bannered.length / ANIME_PAGE_SIZE));
   animePage = Math.min(animePage, totalPages);
   const start = (animePage - 1) * ANIME_PAGE_SIZE;
-  const visible = items.slice(start, start + ANIME_PAGE_SIZE);
-  $('#anime-grid').innerHTML = visible.length ? visible.map(itemCard).join('') : '<div class="empty-state">No matching anime found. Try another title or genre.</div>';
-  $('#anime-count').textContent = `${items.length} title${items.length === 1 ? '' : 's'}`;
+  const visible = bannered.slice(start, start + ANIME_PAGE_SIZE);
+  const emptyMessage = bannerLookupUnavailable ? 'Wide banner artwork could not be checked from this network. Your saved catalog is untouched; retry when the artwork service is available.'
+    : pendingWideBanners.size || bannerWorker ? 'Finding widescreen artwork for the collection…'
+    : items.length ? 'No matching series have a verified wide banner yet. Titles without banners are hidden, not deleted.'
+    : 'No matching anime found. Try another title or genre.';
+  $('#anime-grid').innerHTML = visible.length ? visible.map(itemCard).join('') : `<div class="empty-state">${emptyMessage}</div>`;
+  $('#anime-count').textContent = `${bannered.length} with banners`;
   $('#anime-pagination').hidden = totalPages === 1;
   $('#anime-page-info').textContent = `Page ${animePage} of ${totalPages}`;
   $('#anime-page-numbers').innerHTML = Array.from({length:totalPages}, (_, i) => {
@@ -181,7 +268,7 @@ function localAnime(search = '') {
 
 const animeQuery = `query ($search: String) {
   Page(page: 1, perPage: 24) { media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
-    id title { english romaji } episodes format averageScore coverImage { large }
+    id title { english romaji } episodes format averageScore coverImage { large } bannerImage
     description(asHtml: false) seasonYear
   } }
 }`;
@@ -193,10 +280,10 @@ async function loadAnime(search = '') {
   $('#anime-status').classList.remove('error');
   renderAnime(saved, {resetPage:true});
   if (data.lowDataMode) {
-    $('#anime-status').textContent = 'Low-Data Mode is on. Showing saved anime only; online discovery is paused.';
+    $('#anime-status').textContent = 'Low-Data Mode is on. Showing titles with previously verified banners; online artwork lookup is paused.';
     return;
   }
-  $('#anime-status').textContent = 'Showing saved anime now. Checking for more titles online…';
+  $('#anime-status').textContent = 'Checking for authentic widescreen banners and additional anime…';
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
@@ -213,9 +300,11 @@ async function loadAnime(search = '') {
     const online = payload.data.Page.media.map(row => {
       const name = cleanText(row.title?.english || row.title?.romaji, 120);
       const offline = OFFLINE_ANIME.find(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+      const banner = verifiedBanner(name,row,offline?.year);
+      if (banner) rememberWideBanner(name,banner);
       const item = {id:offline?.id || `anime:${row.id}`, name:offline?.name || name, type:'anime',
         episodes:row.episodes ? Math.min(300, Math.max(1, row.episodes)) : 0, format:row.format || 'Anime', score:row.averageScore || 0,
-        cover:safeUrl(row.coverImage?.large || '') || '',
+        cover:safeUrl(row.coverImage?.large || '') || '', banner,
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
       if (offline?.episodeTitles?.length) Object.assign(item, offline);
       // Preserve the original Anvil IDs and JJK episode names.
@@ -228,11 +317,11 @@ async function loadAnime(search = '') {
     save();
     const items = localAnime(search);
     renderAnime(items);
-    $('#anime-status').textContent = 'Saved anime and additional online results. Discovered titles are now remembered for future visits; video sources are separate.';
+    $('#anime-status').textContent = 'Showing series with widescreen artwork. Titles without banners are hidden, not deleted; video sources remain separate.';
   } catch (error) {
     if (request !== searchSerial) return;
     $('#anime-status').textContent = saved.length
-      ? 'Online discovery is unavailable right now, but all saved anime remain visible.'
+      ? 'Online discovery is unavailable. Only titles with previously verified banners can appear right now.'
       : 'No saved matches, and online search is unavailable right now. Try another title or genre.';
     if (!saved.length) $('#anime-status').classList.add('error');
   }
@@ -277,14 +366,11 @@ function openDetails(id) {
 
 function renderMediaDetail() {
   if (!selected) return;
-  const image = data.lowDataMode ? '' : trustedCover(selected.banner) || trustedCover(selected.backdrop)
-    || trustedCover(selected.detailCover) || trustedCover(selected.cover);
-  const poster = data.lowDataMode ? '' : trustedCover(selected.detailCover) || trustedCover(selected.cover);
+  const image = data.lowDataMode ? '' : wideBanner(selected);
   const metadata = [selected.year || '', selected.format || (selected.type === 'anime' ? 'Anime' : selected.type === 'tv' ? 'TV series' : 'Movie'),
     selected.score ? `★ ${(selected.score / 10).toFixed(1)} / 10` : ''].filter(Boolean);
   $('#media-detail-hero').innerHTML = `
-    ${image ? `<img class="media-detail-backdrop" src="${escapeHtml(image)}" alt="" aria-hidden="true" loading="eager">` : ''}
-    ${poster ? `<img class="media-detail-poster" src="${escapeHtml(poster)}" alt="${escapeHtml(selected.name)} artwork" loading="eager">` : ''}
+    ${image ? `<img class="media-detail-banner" src="${escapeHtml(image)}" alt="${escapeHtml(selected.name)} widescreen banner" loading="eager">` : ''}
     <div class="media-detail-hero-copy"><span class="kicker">CRYALUNE / ${escapeHtml(selected.type.toUpperCase())}</span>
       <h2 id="media-detail-title">${escapeHtml(selected.name)}</h2><p>${escapeHtml(metadata.join(' · '))}</p></div>`;
   $('#media-detail-description').textContent = selected.description || 'Part of your personal Cryalune collection.';
@@ -365,8 +451,10 @@ function renderLocalTitles() {
 }
 
 function renderFavorites() {
-  const items = data.favorites.map(id => catalog.get(id)).filter(Boolean);
-  $('#list-grid').innerHTML = items.length ? items.map(itemCard).join('') : '<div class="empty-state">No favorites yet. Open a title and select “Add to my favorites” to save it here.</div>';
+  const items = data.favorites.map(id => catalog.get(id)).filter(Boolean)
+    .filter(item => item.type !== 'anime' || wideBanner(item));
+  $('#list-grid').innerHTML = items.length ? items.map(itemCard).join('')
+    : '<div class="empty-state">No favorites with widescreen artwork available yet. Saved favorites without banners remain in your browser.</div>';
 }
 
 function availableSources(item, episode) {
@@ -655,6 +743,11 @@ $('#anime-search-form').addEventListener('submit', event => {
   loadAnime($('#anime-query').value.trim());
 });
 $('#anime-prev').addEventListener('click', () => changeAnimePage(-1));
+$('#retry-banners').addEventListener('click', () => {
+  bannerLookupUnavailable = false;
+  $('#retry-banners').hidden = true;
+  renderAnime(animeResults);
+});
 $('#anime-next').addEventListener('click', () => changeAnimePage(1));
 $('#anime-page-numbers').addEventListener('click', event => {
   const button = event.target.closest('[data-anime-page]');

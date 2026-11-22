@@ -90,18 +90,14 @@ footer span {color:#a9adb5}
   isolation:isolate;position:relative;height:370px;overflow:hidden;
   background:radial-gradient(ellipse at 80% 35%,#3c4555 0%,#222832 44%,#0e1219 100%);
 }
-.media-detail-backdrop {
-  position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;object-position:center 34%;
-  filter:blur(20px) saturate(.9) brightness(.62);opacity:.75;transform:scale(1.04);
-}
-.media-detail-poster {
-  position:absolute;z-index:1;right:7%;top:-7%;height:114%;width:47%;
-  object-fit:contain;object-position:center center;filter:drop-shadow(0 13px 32px #000a);
+.media-detail-banner {
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;
+  filter:saturate(.88) contrast(1.04);opacity:.98;
 }
 .media-detail-hero::after {
   content:"";position:absolute;z-index:2;inset:0;
-  background:linear-gradient(90deg,#101318bb 0%,#10131844 55%,#10131812 100%),
-    linear-gradient(0deg,#101318 0%,#10131811 62%,#10131826 100%);
+  background:linear-gradient(90deg,#101318bd 0%,#10131855 55%,#10131815 100%),
+    linear-gradient(0deg,#101318 0%,#10131811 67%,#10131826 100%);
   pointer-events:none;
 }
 .media-detail-hero-copy {position:absolute;z-index:3;bottom:25px;left:29px;max-width:75%}
@@ -241,6 +237,8 @@ body:has(.view[data-view="home"]:not([hidden])) {
 .anime-page-numbers button[aria-current="page"] {background:#c3c6cd;border-color:#c3c6cd;color:#13161b;font-weight:700}
 .anime-page-numbers button:hover:not([aria-current="page"]) {background:#ffffff20}
 .catalog-attribution {font-size:11px;line-height:1.6;color:#8c909a;margin:20px 0 8px}
+#retry-banners {margin:0 0 16px}
+#retry-banners[hidden] {display:none}
 .catalog-attribution a,.catalog-sources a {color:#cbd0d9;text-underline-offset:3px}
 .catalog-sources {display:flex;gap:15px;flex-wrap:wrap;margin-top:16px;font-size:12px}
 .episode-entry {display:flex;flex-direction:column;gap:7px;min-width:0}
@@ -282,7 +280,6 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .media-detail-hero {height:285px}
   .media-detail-hero-copy {left:19px;bottom:20px;max-width:80%}
   .media-detail-hero-copy h2 {font-size:clamp(29px,7vw,42px)}
-  .media-detail-poster {right:1%;width:51%;opacity:.77}
   .media-detail-body {padding:19px}
   .media-episode-selector {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 44px;gap:6px}
   .media-episode-selector select {font-size:11px;padding:0 6px}

@@ -60,6 +60,7 @@
           <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, titles or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
           <div class="section-title"><h2 id="anime-heading">The anime collection</h2><span class="muted" id="anime-count"></span></div>
           <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
+          <button id="retry-banners" type="button" class="button" hidden>Retry widescreen artwork</button>
           <div id="anime-grid" class="card-grid"></div>
           <nav id="anime-pagination" class="anime-pagination" aria-label="Anime pages" hidden>
             <button id="anime-prev" class="button" type="button">← Previous</button>
@@ -67,7 +68,7 @@
             <span id="anime-page-numbers" class="anime-page-numbers"></span>
             <button id="anime-next" class="button" type="button">Next →</button>
           </nav>
-          <p class="catalog-attribution">New poster artwork and episode guides from <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a> (CC BY-SA). The original Anvil catalog is preserved. Individual official series sites are linked when available. No video streams are included.</p>
+          <p class="catalog-attribution">Poster artwork and episode guides from <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a> (CC BY-SA); separate widescreen artwork from <a href="https://anilist.co" target="_blank" rel="noopener noreferrer">AniList</a> where available. Titles without genuine wide banners are hidden from discovery, not deleted. No video streams are included.</p>
         </div>
         <div id="pane-movies" data-video-pane="movies" role="tabpanel" aria-labelledby="tab-movies" hidden>
           <button class="button primary add-title" data-type="movie">＋ Add movie</button><div id="movie-grid" class="card-grid spaced"></div>
