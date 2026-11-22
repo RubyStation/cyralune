@@ -29,9 +29,13 @@ static frontend.
 - A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
 - An original short demo MP4 and caption file so you can test the player.
 - A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
-  HLS.js loading; sandboxed third-party embeds when the provider permits it.
+  HLS.js loading from locally bundled Apache-2.0-licensed code; sandboxed
+  third-party embeds when the provider permits it.
 - Per-episode source priority and fallback when a native stream fails.
 - HLS.js is loaded only when an HLS stream is selected, reducing initial downloads.
+- HLS quality and audio-track menus when the stream provides variants, speed
+  and 10-second skip controls for direct video, optional autoplay of the next
+  sourced episode, keyboard shortcuts, and saved volume/speed settings.
 - Native video controls for audio volume, subtitles, and fullscreen.
 - Watch progress, manual episode marks, appearance preferences, favorites, and sources
   saved in this browser. Historical website bookmarks remain in exported backups for safekeeping.
@@ -63,6 +67,47 @@ The bundled demo is an original test clip, not a JJK episode.
 
 For JJK: Videos → Anime → search Jujutsu Kaisen → select an episode → Manage sources
 or choose a video file you already own and are permitted to use.
+
+### Connect actual episodes to the player
+
+The catalog provides **episode names, not episode video files**. A title shows
+"No source yet" until a playable, authorized video has been connected.
+
+1. **Test now:** Videos → Movies → The Lunar Test Reel → Episode 1. The
+   locally bundled MP4 works without another provider, and has a `.vtt` track.
+2. **Connect one on your device:** Open any title's episode → Play → Manage
+   sources. Add your own permitted HTTPS MP4/WebM or HLS `.m3u8` URL, or a
+   publisher-provided embed (including embeddable YouTube). It saves in that
+   browser only, with priority-based source switching.
+3. **Publish a source for everyone:** Add its entry to
+   `nyx-static/published-sources.js` using the episode's exact catalog ID.
+   For example, Jujutsu Kaisen episode 1 is `anime:113415:e1`, and Ninja Boy
+   Rantaro episode 1 is `anvil:rantaro:e1`. This is code-reviewed and deployed
+   to Firebase along with the website; it is not a secret-source database.
+
+   ```js
+   export const PUBLISHED_SOURCES = Object.freeze({
+     'anime:113415:e1': [
+       {id:'episode-1-licensed', name:'Official source', type:'embed',
+         url:'https://www.youtube.com/watch?v=REPLACE_WITH_PERMITTED_ID', priority:10}
+     ]
+   });
+   ```
+
+   Replace the example with a real, publisher-permitted URL. Do not commit
+   private, tokenized or unauthorized stream links. A third-party embed can
+   decline to load, and DRM-protected video cannot be made playable by the
+   player alone. For direct MP4 and HLS, the source must permit browser playback
+   (including required cross-origin requests). Quality/audio choices only
+   appear when a compatible stream actually offers them.
+
+   After committing, update Firebase in Google Cloud Shell:
+
+   ```bash
+   cd ~/cyralune
+   git pull --ff-only origin main
+   firebase deploy --only hosting
+   ```
 
 ## Put Cryalune on GitHub
 

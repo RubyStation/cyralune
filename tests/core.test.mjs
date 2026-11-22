@@ -20,6 +20,22 @@ test('text is bounded and escaped for HTML output', () => {
   assert.equal(escapeHtml(`<img src="x" onerror='bad'>`), '&lt;img src=&quot;x&quot; onerror=&#39;bad&#39;&gt;');
 });
 
+test('player preferences persist while invalid imported speeds and volumes are sanitized', () => {
+  const defaults = defaultData();
+  assert.equal(defaults.autoNext, false);
+  assert.equal(defaults.playbackSpeed, 1);
+  assert.equal(defaults.playerVolume, 1);
+  assert.deepEqual(
+    (({autoNext, playbackSpeed, playerVolume}) => ({autoNext, playbackSpeed, playerVolume}))(
+      restoreData({autoNext:true, playbackSpeed:1.5, playerVolume:0.4})),
+    {autoNext:true, playbackSpeed:1.5, playerVolume:0.4}
+  );
+  const sanitized = restoreData({autoNext:'true', playbackSpeed:99, playerVolume:5});
+  assert.equal(sanitized.autoNext, false);
+  assert.equal(sanitized.playbackSpeed, 1);
+  assert.equal(sanitized.playerVolume, 1);
+});
+
 test('sources validate type, priority and optional captions', () => {
   const source = normalizedSource({id:'s1', name:'Direct', type:'mp4',
     url:'https://cdn.example.org/movie.mp4', captions:'', priority:7});

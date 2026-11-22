@@ -53,8 +53,11 @@ export function sortedSources(sources) {
 
 export function defaultData() {
   return {version: 1, lastPage: 'home', accent: '#abb0ba', favorites: [], progress: {}, sources: {}, websites: [], titles: [],
-    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false};
+    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false,
+    autoNext: false, playbackSpeed: 1, playerVolume: 1};
 }
+
+export const PLAYBACK_SPEEDS = Object.freeze([0.75, 1, 1.25, 1.5, 2]);
 
 export function restoreData(raw) {
   const initial = defaultData();
@@ -68,6 +71,9 @@ export function restoreData(raw) {
     accent: color,
     cinemaMode: raw.cinemaMode === true,
     lowDataMode: raw.lowDataMode === true,
+    autoNext: raw.autoNext === true,
+    playbackSpeed: PLAYBACK_SPEEDS.includes(Number(raw.playbackSpeed)) ? Number(raw.playbackSpeed) : 1,
+    playerVolume: Number.isFinite(raw.playerVolume) ? Math.min(1, Math.max(0, raw.playerVolume)) : 1,
     episodeMarks: Object.fromEntries(Object.entries(raw.episodeMarks && typeof raw.episodeMarks === 'object' && !Array.isArray(raw.episodeMarks) ? raw.episodeMarks : {})
       .filter(([key, mark]) => key.length <= 150 && ['watched', 'skipped'].includes(mark)).slice(0, 10000)),
     favorites: Array.isArray(raw.favorites) ? raw.favorites.filter(v => typeof v === 'string').slice(0, 3000) : [],

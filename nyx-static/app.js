@@ -1,4 +1,4 @@
-import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups} from './core.js';
+import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups, PLAYBACK_SPEEDS} from './core.js';
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
@@ -25,10 +25,14 @@ for (const title of data.titles) catalog.set(title.id, title);
 
 let selected = null, selectedEpisode = 1, currentSource = null, activeSources = [], activeIndex = -1;
 let localVideoUrl = '', localCaptionUrl = '', hls = null, searchSerial = 0, lastSavedSecond = -1;
-let hlsLibraryPromise = null;
+let hlsLibraryPromise = null, pendingAutoplay = false;
 let activeVideoTab = 'anime', lastRenderedPage = '', detailReturnPage = 'videos', detailReturnTab = 'anime';
 const video = $('#video');
 const embed = $('#embed');
+video.volume = data.playerVolume;
+video.playbackRate = data.playbackSpeed;
+$('#player-speed').value = String(data.playbackSpeed);
+$('#player-auto-next').checked = data.autoNext;
 const wideBanners = new Map();
 try {
   const cached = JSON.parse(localStorage.getItem(BANNER_CACHE_KEY) || '{}');
@@ -517,6 +521,9 @@ function stopPlayers() {
   embed.src = 'about:blank'; embed.hidden = true; video.hidden = true;
   $('#player-empty').hidden = false;
   updateSubtitlePicker(false);
+  updateQualityPicker();
+  updateAudioPicker();
+  updateNativePlayerControls(false);
 }
 
 function clearLocalAttachments() {
@@ -533,6 +540,7 @@ function saveCurrentPosition() {
 }
 
 function closePlayer() {
+  pendingAutoplay = false;
   saveCurrentPosition();
   stopPlayers();
   clearLocalAttachments();
@@ -540,7 +548,7 @@ function closePlayer() {
   if ($('#player-dialog').open) $('#player-dialog').close();
 }
 
-function openPlayer(episode) {
+function openPlayer(episode, {autoplay = false} = {}) {
   if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
   if ($('#player-dialog').open) {
     saveCurrentPosition();
@@ -548,6 +556,7 @@ function openPlayer(episode) {
     clearLocalAttachments(); // A device file belongs only to the episode where it was chosen.
   }
   selectedEpisode = episode;
+  pendingAutoplay = autoplay;
   lastSavedSecond = -1;
   const episodeTitle = selected.episodeTitles?.[episode - 1];
   $('#player-title').textContent = `${selected.name} · Episode ${episode}${episodeTitle ? `: ${episodeTitle}` : ''}`;
@@ -556,7 +565,11 @@ function openPlayer(episode) {
   buildPlayerSourcePicker();
   if (!$('#player-dialog').open) $('#player-dialog').showModal();
   if (activeSources.length) loadSource(0);
-  else { stopPlayers(); $('#player-status').textContent = 'No playable source for this episode yet. Choose your video file or add an authorized source.'; }
+  else {
+    stopPlayers(); pendingAutoplay = false;
+    $('#player-empty').textContent = 'No video connected to this episode. Use a local file or Manage sources to add an authorized video.';
+    $('#player-status').textContent = 'No playable source for this episode yet. Choose your video file or add an authorized source.';
+  }
 }
 
 function updateEpisodeNavigation() {
@@ -594,11 +607,44 @@ function updateSubtitlePicker(available) {
   picker.disabled = !available;
 }
 
+function updateNativePlayerControls(enabled) {
+  $('#player-speed').disabled = !enabled;
+  $('#player-skip-back').disabled = !enabled;
+  $('#player-skip-forward').disabled = !enabled;
+}
+
+function updateQualityPicker(levels = []) {
+  const picker = $('#player-quality');
+  picker.replaceChildren(new Option('Auto', 'auto'));
+  const seen = new Set();
+  levels.forEach((level, index) => {
+    const label = level.height ? `${level.height}p` : level.bitrate ? `${Math.round(level.bitrate / 1000)} kbps` : `Quality ${index + 1}`;
+    if (seen.has(label)) return;
+    seen.add(label);
+    picker.add(new Option(label, String(index)));
+  });
+  picker.value = 'auto';
+  picker.disabled = !levels.length;
+}
+
+function updateAudioPicker(tracks = []) {
+  const picker = $('#player-audio');
+  picker.replaceChildren(new Option('Source default', 'default'));
+  tracks.forEach((track, index) => {
+    const label = track.name || track.lang || `Audio ${index + 1}`;
+    picker.add(new Option(label, String(index)));
+  });
+  picker.value = 'default';
+  picker.disabled = tracks.length < 2;
+}
+
 function getHlsLibrary() {
   if (window.Hls) return Promise.resolve(window.Hls);
   if (!hlsLibraryPromise) hlsLibraryPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js';
+    // Bundle Apache-2.0-licensed hls.js on the same Firebase origin.
+    // Some school networks block third-party CDNs even when Cryalune works.
+    script.src = './assets/vendor/hls.min.js';
     script.onload = () => window.Hls ? resolve(window.Hls) : reject(Error('HLS library was unavailable'));
     script.onerror = () => reject(Error('HLS library could not be downloaded'));
     document.head.append(script);
@@ -617,10 +663,15 @@ function loadSource(index) {
   $('#player-status').textContent = `Loading ${source.name}…`;
   if (source.type === 'embed') {
     video.hidden = true; embed.hidden = false; embed.src = source.url;
-    $('#player-status').textContent = 'This provider controls playback and subtitles. If it fails, use Try next source.';
+    pendingAutoplay = false;
+    $('#player-status').textContent = 'This provider controls its own playback, quality, audio and subtitles. If it fails, use Try next source.';
     return;
   }
   video.hidden = false; embed.hidden = true;
+  updateNativePlayerControls(true);
+  video.playbackRate = data.playbackSpeed;
+  video.volume = data.playerVolume;
+  $('#player-speed').value = String(data.playbackSpeed);
   attachCaptions(localCaptionUrl || source.captions);
   const saved = data.progress[currentKey()];
   const previous = saved && !saved.completed ? Number(saved.time) || 0 : 0;
@@ -632,6 +683,12 @@ function loadSource(index) {
     $('#player-status').textContent = resume
       ? `Resuming at ${minute}:${String(second).padStart(2,'0')}. Press Play to continue.`
       : 'Ready to play. Your place is saved automatically.';
+    if (pendingAutoplay) {
+      pendingAutoplay = false;
+      video.play().catch(() => {
+        $('#player-status').textContent = 'Next episode is ready. Press Play to start.';
+      });
+    }
   };
   if (source.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
     getHlsLibrary().then(Hls => {
@@ -639,6 +696,12 @@ function loadSource(index) {
       if (!Hls.isSupported()) { sourceFailed('HLS support is unavailable here'); return; }
       hls = new Hls({maxBufferLength:30});
       hls.on(Hls.Events.ERROR, (_, error) => { if (error.fatal) sourceFailed('HLS playback failed'); });
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (currentSource === source) updateQualityPicker(hls.levels);
+      });
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+        if (currentSource === source) updateAudioPicker(hls.audioTracks);
+      });
       hls.loadSource(source.url); hls.attachMedia(video);
     }).catch(() => { if (currentSource === source) sourceFailed('HLS support could not load'); });
   } else { video.src = source.url; video.load(); }
@@ -664,7 +727,28 @@ video.addEventListener('timeupdate', () => {
   lastSavedSecond = second; rememberProgress(second, video.duration, false);
 });
 video.addEventListener('pause', () => { if (currentSource) rememberProgress(video.currentTime, video.duration, false); });
-video.addEventListener('ended', () => { if (currentSource) rememberProgress(video.currentTime, video.duration, true); });
+video.addEventListener('ended', () => {
+  if (!currentSource) return;
+  rememberProgress(video.currentTime, video.duration, true);
+  if (!data.autoNext) { $('#player-status').textContent = 'Episode complete. Choose Next episode when you are ready.'; return; }
+  const next = neighboringEpisode(selectedEpisode, 1, selected?.episodes || 0);
+  if (next === null) { $('#player-status').textContent = 'You reached the last listed episode.'; return; }
+  if (!availableSources(selected, next).length) {
+    $('#player-status').textContent = 'Episode complete. The next episode has no connected video source yet.';
+    return;
+  }
+  openPlayer(next, {autoplay:true});
+});
+video.addEventListener('volumechange', () => {
+  data.playerVolume = video.volume;
+  save();
+});
+video.addEventListener('ratechange', () => {
+  if (!PLAYBACK_SPEEDS.includes(video.playbackRate)) return;
+  data.playbackSpeed = video.playbackRate;
+  $('#player-speed').value = String(video.playbackRate);
+  save();
+});
 
 function rememberProgress(time, duration, completed) {
   if (!selected || !Number.isFinite(time) || time < 0) return;
@@ -808,6 +892,41 @@ $('#try-next-source').addEventListener('click', () => {
 });
 $('#player-subtitles').addEventListener('change', event => {
   for (const track of video.textTracks) track.mode = event.target.value === 'on' ? 'showing' : 'disabled';
+});
+$('#player-speed').addEventListener('change', event => {
+  const speed = Number(event.target.value);
+  if (!video.hidden && PLAYBACK_SPEEDS.includes(speed)) video.playbackRate = speed;
+});
+$('#player-auto-next').addEventListener('change', event => {
+  data.autoNext = event.target.checked;
+  save();
+});
+$('#player-quality').addEventListener('change', event => {
+  if (hls) hls.currentLevel = event.target.value === 'auto' ? -1 : Number(event.target.value);
+});
+$('#player-audio').addEventListener('change', event => {
+  if (hls && event.target.value !== 'default') hls.audioTrack = Number(event.target.value);
+});
+function skipPlayback(seconds) {
+  if (video.hidden || !Number.isFinite(video.duration)) return;
+  video.currentTime = Math.min(Math.max(0, video.currentTime + seconds), video.duration);
+}
+$('#player-skip-back').addEventListener('click', () => skipPlayback(-10));
+$('#player-skip-forward').addEventListener('click', () => skipPlayback(10));
+document.addEventListener('keydown', event => {
+  if (!$('#player-dialog').open || event.altKey || event.ctrlKey || event.metaKey) return;
+  const tag = event.target?.tagName;
+  if (['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag) || event.target?.isContentEditable) return;
+  const key = event.key.toLowerCase();
+  if (key === 'f') { event.preventDefault(); $('#player-fullscreen').click(); return; }
+  if (video.hidden) return; // Embedded video providers manage their own shortcuts.
+  if (key === ' ' || key === 'k') {
+    event.preventDefault();
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  } else if (key === 'arrowleft' || key === 'j') { event.preventDefault(); skipPlayback(-10); }
+  else if (key === 'arrowright' || key === 'l') { event.preventDefault(); skipPlayback(10); }
+  else if (key === 'm') { event.preventDefault(); video.muted = !video.muted; }
 });
 $('#player-fullscreen').addEventListener('click', async () => {
   try {

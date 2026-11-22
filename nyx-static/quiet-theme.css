@@ -269,12 +269,18 @@ body:has(.view[data-view="home"]:not([hidden])) {
 .player-episode-nav #player-episode-count {font-size:12px;letter-spacing:.03em;font-variant-numeric:tabular-nums;text-align:center}
 .player-episode-nav .button:disabled,.player-actions .button:disabled {opacity:.38;cursor:not-allowed}
 .player-actions>label:has(#player-subtitles) {flex:0 1 125px;min-width:105px}
+.player-actions>label:not(:first-child) {flex:0 1 130px;min-width:105px}
+.player-extras {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px}
+.auto-next-toggle {display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#d9dce4;cursor:pointer;margin-right:auto}
+.auto-next-toggle input {accent-color:#c0c7d2;width:17px;height:17px}
+.player-keyboard-hint {font-size:11px;color:#858c99;margin:9px 0 0}
+.player-dialog .player-extras .button:disabled {opacity:.38;cursor:not-allowed}
 #try-next-source {min-height:44px}
 .screen:fullscreen {border-radius:0;background:#06080c}
 .screen:fullscreen video,.screen:fullscreen iframe {object-fit:contain}
 .player-dialog.cinema-mode {width: min(97vw,1800px);max-height:97dvh;background:#0a0d12;padding:14px;border-color:#ffffff40}
 .player-dialog.cinema-mode .screen {height:calc(97dvh - 175px);aspect-ratio:auto;background:#030406}
-.player-dialog.cinema-mode .player-actions,.player-dialog.cinema-mode #player-status {display:none}
+.player-dialog.cinema-mode .player-actions,.player-dialog.cinema-mode .player-extras,.player-dialog.cinema-mode .player-keyboard-hint,.player-dialog.cinema-mode #player-status {display:none}
 .player-dialog.cinema-mode .player-top .kicker {display:none}
 .player-dialog.cinema-mode .player-top h2 {font-size:16px}
 .player-dialog.cinema-mode #cinema-mode {background:#373d47;border-color:#87909c;color:#fff}
