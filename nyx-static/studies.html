@@ -99,10 +99,30 @@
     </main>
   </div>
 
+  <dialog id="media-detail-dialog" class="media-detail-dialog" aria-labelledby="media-detail-title">
+    <button id="media-detail-close" type="button" class="media-detail-close" aria-label="Close title details">×</button>
+    <div id="media-detail-hero" class="media-detail-hero"></div>
+    <div class="media-detail-body">
+      <div class="media-detail-section-heading"><h3>Seasons &amp; episodes</h3><span id="media-episode-progress" class="muted"></span></div>
+      <div id="media-episode-selector" class="media-episode-selector">
+        <label>Season / episode group<select id="media-season"></select></label>
+        <label>Episode<select id="media-episode"></select></label>
+        <button id="media-play" class="media-play" type="button" aria-label="Play selected episode" title="Play selected episode">▶</button>
+      </div>
+      <p id="media-episode-caption" class="media-episode-caption" aria-live="polite"></p>
+      <div class="media-detail-info">
+        <p id="media-detail-description"></p>
+        <div id="media-detail-facts" class="media-detail-facts"></div>
+      </div>
+      <div class="media-detail-footer"><div id="media-detail-tags" class="media-detail-tags"></div><div class="media-detail-tools"><button id="media-episode-mark" type="button" class="button">Mark watched</button><button id="media-favorite" type="button" class="button" data-action="favorite">♡ My Favorites</button></div></div>
+      <p id="media-source-note" class="media-source-note"></p>
+    </div>
+  </dialog>
+
   <dialog id="source-dialog" class="dialog"><form method="dialog" class="dialog-head"><h2>Playback source</h2><button class="icon-button" aria-label="Close">×</button></form>
     <p id="source-context" class="muted"></p>
     <div id="source-list" class="source-list"></div>
-    <form id="source-form" class="editor-form"><h3>Add a source</h3><label>Source name<input id="source-name" required maxlength="70" placeholder="My hosted video"></label><div class="form-row"><label>Format<select id="source-kind"><option value="mp4">MP4 / WebM</option><option value="hls">HLS (.m3u8)</option><option value="embed">Provider embed</option></select></label><label>Priority (lower first)<input id="source-priority" type="number" min="0" max="999" value="10" required></label></div><label>HTTPS media or embed URL<input id="source-url" type="url" required placeholder="https://your-authorized-source.example/video.mp4"></label><label>Optional VTT captions URL<input id="source-captions" type="url" placeholder="https://example.org/captions.vtt"></label><p class="hint">Only add sources you have permission to use. Embeds run inside a sandbox and retain their provider controls.</p><button type="submit" class="button primary">Save source</button></form>
+    <form id="source-form" class="editor-form"><h3>Add a source</h3><label>Source name<input id="source-name" required maxlength="70" placeholder="Official episode or my hosted video"></label><div class="form-row"><label>Format<select id="source-kind"><option value="mp4">MP4 / WebM</option><option value="hls">HLS (.m3u8)</option><option value="embed">YouTube / provider embed</option></select></label><label>Priority (lower first)<input id="source-priority" type="number" min="0" max="999" value="10" required></label></div><label>HTTPS media or embed URL<input id="source-url" type="url" required placeholder="https://your-authorized-source.example/video.mp4"></label><label>Optional VTT captions URL<input id="source-captions" type="url" placeholder="https://example.org/captions.vtt"></label><p class="hint">You can paste an official YouTube watch or share link when choosing an embed. Only add videos you are permitted to share. Provider controls and playback restrictions still apply.</p><button type="submit" class="button primary">Save source</button></form>
   </dialog>
 
   <dialog id="title-dialog" class="dialog"><form method="dialog" class="dialog-head"><h2>Add a title</h2><button class="icon-button" aria-label="Close">×</button></form>
@@ -110,7 +130,7 @@
   </dialog>
 
   <dialog id="player-dialog" class="player-dialog"><div class="player-top"><div><p class="kicker">NOW PLAYING</p><h2 id="player-title">Cryalune</h2></div><div class="player-top-actions"><button id="player-fullscreen" class="button" type="button" aria-pressed="false">Fullscreen</button><button id="cinema-mode" class="button" type="button" aria-pressed="false">Cinema Mode</button><button id="player-close" class="icon-button" aria-label="Close player">×</button></div></div>
-    <div class="screen" id="player-screen"><video id="video" controls playsinline preload="metadata"></video><iframe id="embed" hidden title="Embedded media player" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" allow="encrypted-media; autoplay; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><div id="player-empty" class="player-empty">No playback source selected.</div></div>
+    <div class="screen" id="player-screen"><video id="video" controls playsinline preload="metadata"></video><iframe id="embed" hidden title="Embedded media player" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" allow="encrypted-media; autoplay; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><div id="player-empty" class="player-empty">No playback source selected.</div></div>
     <nav class="player-episode-nav" aria-label="Episode navigation"><button id="player-prev-episode" type="button" class="button">← Previous episode</button><span id="player-episode-count" class="muted" aria-live="polite">Episode 1</span><button id="player-next-episode" type="button" class="button">Next episode →</button></nav>
     <div class="player-actions"><label>Source<select id="player-source"></select></label><button id="try-next-source" class="button" type="button">Try next source</button><label>Subtitles<select id="player-subtitles" disabled><option value="off">Off</option></select></label><label class="button file-button">Use local video<input id="local-video" type="file" accept="video/mp4,video/webm,video/*" hidden></label><label class="button file-button">Load subtitles<input id="local-captions" type="file" accept=".vtt,text/vtt" hidden></label><button id="manage-source" class="button">Manage sources</button></div>
     <p id="player-status" class="status" role="status">Choose a source to start watching.</p>

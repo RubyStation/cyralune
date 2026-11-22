@@ -71,6 +71,70 @@ dialog::backdrop {background:#050608df}
 footer {border-color:#ffffff1e;color:#898d95}
 footer span {color:#a9adb5}
 
+/* Title selection — cinematic artwork and episode controls without leaving the library. */
+.media-detail-dialog {
+  width:min(875px,calc(100vw - 32px));max-width:none;
+  max-height:min(90dvh,980px);padding:0;overflow-y:auto;
+  background:#101318;border:1px solid #ffffff30;border-radius:21px;
+  color:#f2f3f5;box-shadow:0 35px 100px #000c;
+}
+.media-detail-dialog::backdrop {background:#04070abe;backdrop-filter:blur(9px)}
+.media-detail-close {
+  position:absolute;top:17px;right:17px;z-index:5;
+  display:grid;place-items:center;width:38px;height:38px;
+  color:#eef0f2;background:#080b10cc;border:1px solid #ffffff32;
+  border-radius:50%;font-size:24px;cursor:pointer;
+}
+.media-detail-close:hover {background:#303640}
+.media-detail-hero {
+  isolation:isolate;position:relative;height:370px;overflow:hidden;
+  background:radial-gradient(ellipse at 80% 35%,#3c4555 0%,#222832 44%,#0e1219 100%);
+}
+.media-detail-backdrop {
+  position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;object-position:center 34%;
+  filter:blur(20px) saturate(.9) brightness(.62);opacity:.75;transform:scale(1.04);
+}
+.media-detail-poster {
+  position:absolute;z-index:1;right:7%;top:-7%;height:114%;width:47%;
+  object-fit:contain;object-position:center center;filter:drop-shadow(0 13px 32px #000a);
+}
+.media-detail-hero::after {
+  content:"";position:absolute;z-index:2;inset:0;
+  background:linear-gradient(90deg,#101318bb 0%,#10131844 55%,#10131812 100%),
+    linear-gradient(0deg,#101318 0%,#10131811 62%,#10131826 100%);
+  pointer-events:none;
+}
+.media-detail-hero-copy {position:absolute;z-index:3;bottom:25px;left:29px;max-width:75%}
+.media-detail-hero-copy .kicker {font-size:10px;letter-spacing:.23em;color:#e0e3e8}
+.media-detail-hero-copy h2 {font-size:clamp(34px,4.4vw,55px);line-height:1.08;letter-spacing:-.035em;margin:11px 0 12px;text-shadow:0 3px 12px #0009}
+.media-detail-hero-copy p {font-size:13px;color:#d4d7dc;margin:0}
+.media-detail-body {padding:25px 29px 29px}
+.media-detail-section-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:13px}
+.media-detail-section-heading h3 {font-size:17px;font-weight:620;margin:0}
+.media-detail-section-heading span {font-size:12px}
+.media-episode-selector {display:grid;grid-template-columns:minmax(150px,1fr) minmax(190px,1.5fr) 47px;align-items:end;gap:10px}
+.media-episode-selector[hidden] {display:none}
+.media-episode-selector label {display:grid;min-width:0;gap:6px;color:#a7abb4;font-size:12px}
+.media-episode-selector select {
+  width:100%;min-height:43px;padding:0 12px;border-radius:10px;border:1px solid #ffffff28;
+  background:#1c2028;color:#edf0f2;font-size:13px;color-scheme:dark;
+}
+.media-episode-selector select:focus-visible,.media-play:focus-visible,.media-detail-close:focus-visible {outline:2px solid #bfc5cf;outline-offset:2px}
+.media-play {display:grid;place-items:center;height:43px;border:0;border-radius:11px;background:#d6d9df;color:#141820;font-size:18px;cursor:pointer}
+.media-play:hover {background:#f2f3f5}
+.media-episode-caption {font-size:13px;line-height:1.55;color:#b9bec7;margin:12px 0 0}
+.media-detail-info {display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:24px;margin-top:16px}
+.media-detail-info>p {color:#c1c5ce;font-size:13px;line-height:1.75;margin:0}
+.media-detail-facts {background:#171b22;border:1px solid #ffffff16;border-radius:12px;padding:12px;display:grid;gap:10px;align-self:start}
+.media-detail-facts>div {display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.media-detail-facts span {color:#989eaa}
+.media-detail-facts strong {color:#e3e5e8;font-weight:560;text-align:right}
+.media-detail-footer {margin-top:21px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.media-detail-tags,.media-detail-tools {display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.media-detail-tags .chip {font-size:11px}
+.media-detail-tools .button {font-size:12px;min-height:35px;padding:8px 12px}
+.media-source-note {margin:17px 0 0;padding:11px 13px;border:1px solid #ffffff17;border-radius:10px;background:#ffffff08;color:#aeb3bd;font-size:12px;line-height:1.55}
+
 /* Keep the photographed basalt visible on Home and center the identity. */
 body:has(.view[data-view="home"]:not([hidden])) {
   background: linear-gradient(180deg,#07090dc2 0%,#07090d57 33%,#07090d54 67%,#080a0ddd 100%),
@@ -214,6 +278,17 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   #anime-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:700px) {
+  .media-detail-dialog {width:calc(100vw - 18px);max-height:93dvh;border-radius:15px}
+  .media-detail-hero {height:285px}
+  .media-detail-hero-copy {left:19px;bottom:20px;max-width:80%}
+  .media-detail-hero-copy h2 {font-size:clamp(29px,7vw,42px)}
+  .media-detail-poster {right:1%;width:51%;opacity:.77}
+  .media-detail-body {padding:19px}
+  .media-episode-selector {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 44px;gap:6px}
+  .media-episode-selector select {font-size:11px;padding:0 6px}
+  .media-detail-info {grid-template-columns:1fr;gap:14px}
+  .media-detail-facts {grid-template-columns:repeat(3,minmax(0,1fr))}
+  .media-detail-facts>div {flex-direction:column;gap:3px}
   .rail {background:#101319f4;border-top-color:#ffffff24}
   .rail-nav a {min-height:55px}
   .rail-nav .nav-icon,.rail-nav .nav-icon svg {width:21px;height:21px}

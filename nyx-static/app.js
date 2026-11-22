@@ -1,6 +1,7 @@
-import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource} from './core.js';
+import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups} from './core.js';
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
+import {PUBLISHED_SOURCES} from './published-sources.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -263,7 +264,75 @@ function openDetails(id) {
       <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my favorites' : '♡ Add to my favorites'}</button></div>
       ${sourceLinks ? `<div class="catalog-sources">${sourceLinks}</div>` : ''}</div>`;
   renderEpisodes();
-  location.hash = '#detail'; pageRoute();
+  if (!$('#media-detail-dialog').open) {
+    const recent = Object.entries(data.progress).filter(([key, record]) =>
+      key.startsWith(`${selected.id}:e`) && Number.isInteger(record?.episode) &&
+      record.episode >= 1 && record.episode <= selected.episodes)
+      .sort((a, b) => (b[1].at || 0) - (a[1].at || 0))[0];
+    selectedEpisode = recent?.[1].episode || 1;
+  }
+  renderMediaDetail();
+  if (!$('#media-detail-dialog').open) $('#media-detail-dialog').showModal();
+}
+
+function renderMediaDetail() {
+  if (!selected) return;
+  const image = data.lowDataMode ? '' : trustedCover(selected.banner) || trustedCover(selected.backdrop)
+    || trustedCover(selected.detailCover) || trustedCover(selected.cover);
+  const poster = data.lowDataMode ? '' : trustedCover(selected.detailCover) || trustedCover(selected.cover);
+  const metadata = [selected.year || '', selected.format || (selected.type === 'anime' ? 'Anime' : selected.type === 'tv' ? 'TV series' : 'Movie'),
+    selected.score ? `★ ${(selected.score / 10).toFixed(1)} / 10` : ''].filter(Boolean);
+  $('#media-detail-hero').innerHTML = `
+    ${image ? `<img class="media-detail-backdrop" src="${escapeHtml(image)}" alt="" aria-hidden="true" loading="eager">` : ''}
+    ${poster ? `<img class="media-detail-poster" src="${escapeHtml(poster)}" alt="${escapeHtml(selected.name)} artwork" loading="eager">` : ''}
+    <div class="media-detail-hero-copy"><span class="kicker">CRYALUNE / ${escapeHtml(selected.type.toUpperCase())}</span>
+      <h2 id="media-detail-title">${escapeHtml(selected.name)}</h2><p>${escapeHtml(metadata.join(' · '))}</p></div>`;
+  $('#media-detail-description').textContent = selected.description || 'Part of your personal Cryalune collection.';
+  $('#media-detail-facts').innerHTML = [
+    ['Format', selected.format || (selected.type === 'tv' ? 'TV series' : selected.type === 'anime' ? 'Anime' : 'Movie')],
+    ['Release', selected.year || 'Not listed'],
+    ['Episodes', Number.isInteger(selected.episodes) && selected.episodes > 0 ? String(selected.episodes) : 'Not listed']
+  ].map(([key,value]) => `<div><span>${escapeHtml(key)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+  $('#media-detail-tags').innerHTML = String(selected.genre || '').split(',').map(genre => genre.trim())
+    .filter(Boolean).slice(0,5).map(genre => `<span class="chip">${escapeHtml(genre)}</span>`).join('');
+  $('#media-favorite').textContent = data.favorites.includes(selected.id) ? '♥ In My Favorites' : '♡ Add to My Favorites';
+  renderMediaEpisodeSelector();
+}
+
+function renderMediaEpisodeSelector() {
+  if (!selected) return;
+  const groups = episodeGroups(selected.episodes, selected.seasons);
+  const available = groups.length > 0;
+  $('#media-episode-selector').hidden = !available;
+  $('#media-episode-mark').hidden = !available;
+  if (!available) {
+    $('#media-episode-caption').textContent = 'Episode information is not available for this title yet.';
+    $('#media-episode-progress').textContent = '';
+    $('#media-source-note').textContent = 'Add episode information before selecting a video.';
+    return;
+  }
+  if (selectedEpisode < 1 || selectedEpisode > selected.episodes) selectedEpisode = 1;
+  const group = groups.find(item => selectedEpisode >= item.start && selectedEpisode <= item.end) || groups[0];
+  $('#media-season').innerHTML = groups.map(item => `<option value="${item.start}">${escapeHtml(item.label)}</option>`).join('');
+  $('#media-season').value = String(group.start);
+  $('#media-episode').innerHTML = Array.from({length:group.end-group.start+1},(_,index) => {
+    const number = group.start + index;
+    const title = selected.episodeTitles?.[number-1];
+    return `<option value="${number}">${number}. ${escapeHtml(title || `Episode ${number}`)}</option>`;
+  }).join('');
+  $('#media-episode').value = String(selectedEpisode);
+  const title = selected.episodeTitles?.[selectedEpisode-1];
+  $('#media-episode-caption').textContent = title ? `Episode ${selectedEpisode} · ${title}` : `Episode ${selectedEpisode} of ${selected.episodes}`;
+  const watched = Array.from({length:selected.episodes},(_,index) => episodeMark(progressKey(selected.id,index+1)))
+    .filter(mark => mark === 'watched').length;
+  $('#media-episode-progress').textContent = `${watched} of ${selected.episodes} watched`;
+  const currentMark = episodeMark(currentKey());
+  $('#media-episode-mark').textContent = currentMark === 'watched' ? '✓ Watched' : currentMark === 'skipped' ? '↷ Skipped' : '○ Mark watched';
+  $('#media-episode-mark').setAttribute('aria-label', `Change episode ${selectedEpisode} status. Currently ${currentMark}`);
+  const sources = availableSources(selected, selectedEpisode).length;
+  $('#media-source-note').textContent = sources
+    ? `${sources} available playback source${sources === 1 ? '' : 's'} for this episode. You can also choose a local video file.`
+    : 'No video source linked to this episode yet. Select Play to add a permitted source or choose a video from your device.';
 }
 
 function episodeMark(key) {
@@ -302,7 +371,7 @@ function renderFavorites() {
 
 function availableSources(item, episode) {
   const key = progressKey(item.id, episode);
-  const stored = (data.sources[key] || []).map(normalizedSource).filter(Boolean);
+  const stored = [...(PUBLISHED_SOURCES[key] || []), ...(data.sources[key] || [])].map(normalizedSource).filter(Boolean);
   if (item.id === demo.id && episode === 1) stored.unshift({id:'built-in-demo',name:'Original demo clip',type:'mp4',url:'./assets/cyralune-demo.mp4',captions:'./assets/cyralune-demo.vtt',priority:0});
   return sortedSources(stored);
 }
@@ -517,7 +586,7 @@ document.addEventListener('click', event => {
   }
   if (action === 'favorite' && selected) {
     data.favorites = data.favorites.includes(selected.id) ? data.favorites.filter(id => id !== selected.id) : [...data.favorites, selected.id];
-    save(); openDetails(selected.id);
+    save(); renderFavorites(); openDetails(selected.id);
   }
   if (action === 'remove-source') {
     data.sources[currentKey()] = (data.sources[currentKey()] || []).filter(source => source.id !== button.dataset.id);
@@ -532,6 +601,28 @@ $('#go-search').addEventListener('click', () => {
 $('#detail-back').addEventListener('click', () => {
   if (detailReturnPage === 'home') location.hash = '#home';
   else { activeVideoTab = detailReturnTab; location.hash = '#videos'; pageRoute(); }
+});
+$('#media-detail-close').addEventListener('click', () => $('#media-detail-dialog').close());
+$('#media-season').addEventListener('change', event => {
+  if (!selected) return;
+  const group = episodeGroups(selected.episodes, selected.seasons)
+    .find(item => item.start === Number(event.target.value));
+  if (!group) return;
+  selectedEpisode = group.start;
+  renderMediaEpisodeSelector();
+});
+$('#media-episode').addEventListener('change', event => {
+  const episode = Number(event.target.value);
+  if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
+  selectedEpisode = episode;
+  renderMediaEpisodeSelector();
+});
+$('#media-play').addEventListener('click', () => openPlayer(selectedEpisode));
+$('#media-episode-mark').addEventListener('click', () => {
+  if (!selected || selectedEpisode < 1 || selectedEpisode > selected.episodes) return;
+  const key = currentKey(), previous = episodeMark(key);
+  data.episodeMarks[key] = previous === 'watched' ? 'skipped' : previous === 'skipped' ? 'unwatched' : 'watched';
+  save(); renderEpisodes(); renderMediaEpisodeSelector();
 });
 $$('[data-video-tab]').forEach(button => button.addEventListener('click', () => selectVideoTab(button.dataset.videoTab)));
 $('.video-tabs').addEventListener('keydown', event => {
@@ -575,6 +666,9 @@ $('#anime-page-numbers').addEventListener('click', event => {
 $('#player-close').addEventListener('click', closePlayer);
 $('#cinema-mode').addEventListener('click', () => { data.cinemaMode = !data.cinemaMode; save(); applyPreferences(); });
 $('#player-dialog').addEventListener('close', closePlayer);
+$('#player-dialog').addEventListener('close', () => {
+  if ($('#media-detail-dialog').open) renderMediaEpisodeSelector();
+});
 $('#player-prev-episode').addEventListener('click', () => {
   const episode = neighboringEpisode(selectedEpisode, -1, selected?.episodes || 0);
   if (episode !== null) openPlayer(episode);

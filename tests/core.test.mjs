@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources,
-  defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource} from '../nyx-static/core.js';
+import {safeUrl, cleanText, escapeHtml, normalizedSource, playableEmbedUrl, sortedSources,
+  defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups} from '../nyx-static/core.js';
 
 if (!globalThis.crypto) globalThis.crypto = {randomUUID: () => 'test-uuid'};
 
@@ -30,6 +30,15 @@ test('sources validate type, priority and optional captions', () => {
   assert.equal(normalizedSource({...source, url:'http://invalid.test/movie.mp4'}), null);
 });
 
+test('official YouTube links become playable embed links without weakening URL validation', () => {
+  assert.equal(playableEmbedUrl('https://www.youtube.com/watch?v=M7lc1UVf-VE'), 'https://www.youtube.com/embed/M7lc1UVf-VE');
+  assert.equal(playableEmbedUrl('https://youtu.be/M7lc1UVf-VE?t=20'), 'https://www.youtube.com/embed/M7lc1UVf-VE');
+  assert.equal(normalizedSource({type:'embed',url:'https://youtu.be/M7lc1UVf-VE',priority:0}).url,
+    'https://www.youtube.com/embed/M7lc1UVf-VE');
+  assert.equal(playableEmbedUrl('http://www.youtube.com/watch?v=M7lc1UVf-VE'), null);
+  assert.equal(playableEmbedUrl('https://evil.youtube.com/watch?v=M7lc1UVf-VE'), 'https://evil.youtube.com/watch?v=M7lc1UVf-VE');
+});
+
 test('source priority sorts ascending without changing input', () => {
   const sources = [{name:'Backup', priority:10}, {name:'Primary', priority:1}];
   assert.deepEqual(sortedSources(sources).map(x => x.name), ['Primary', 'Backup']);
@@ -51,6 +60,20 @@ test('source fallback advances only when another source exists', () => {
   assert.equal(nextPlayableSource(2, 3), null);
   assert.equal(nextPlayableSource(-1, 3), null);
   assert.equal(nextPlayableSource(0, 0), null);
+});
+
+test('episode selector uses true seasons or accurate episode groups', () => {
+  assert.deepEqual(episodeGroups(12), [{start:1,end:12,label:'All episodes'}]);
+  assert.deepEqual(episodeGroups(50), [
+    {start:1,end:24,label:'Episodes 1–24'},
+    {start:25,end:48,label:'Episodes 25–48'},
+    {start:49,end:50,label:'Episodes 49–50'}
+  ]);
+  assert.deepEqual(episodeGroups(4,[{name:'Opening arc',start:1,end:2},{name:'Second arc',start:3,end:4}]),[
+    {start:1,end:2,label:'Opening arc'}, {start:3,end:4,label:'Second arc'}
+  ]);
+  assert.equal(episodeGroups(50,[{start:1,end:50},{start:25,end:50}]).length,3);
+  assert.deepEqual(episodeGroups(0),[]);
 });
 
 test('invalid backup fields are constrained when restored', () => {

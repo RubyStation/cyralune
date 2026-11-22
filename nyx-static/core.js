@@ -20,10 +20,25 @@ export function escapeHtml(value) {
   })[char]);
 }
 
+export function playableEmbedUrl(raw) {
+  const url = safeUrl(raw);
+  if (!url) return null;
+  const parsed = new URL(url);
+  const host = parsed.hostname.toLowerCase();
+  let id = '';
+  if (['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(host)) {
+    if (parsed.pathname === '/watch') id = parsed.searchParams.get('v') || '';
+    else id = parsed.pathname.match(/^\/(?:embed|live|shorts)\/([a-zA-Z0-9_-]{11})(?:\/|$)/)?.[1] || '';
+  } else if (host === 'youtu.be' || host === 'www.youtu.be') {
+    id = parsed.pathname.match(/^\/([a-zA-Z0-9_-]{11})(?:\/|$)/)?.[1] || '';
+  }
+  return /^[a-zA-Z0-9_-]{11}$/.test(id) ? `https://www.youtube.com/embed/${id}` : url;
+}
+
 export function normalizedSource(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const type = cleanText(raw.type, 10).toLowerCase();
-  const url = safeUrl(raw.url);
+  const url = type === 'embed' ? playableEmbedUrl(raw.url) : safeUrl(raw.url);
   const captions = safeUrl(raw.captions || '', {allowEmpty: true});
   const priority = Number(raw.priority ?? 10);
   if (!['mp4', 'hls', 'embed'].includes(type) || !url || captions === null ||
@@ -91,4 +106,25 @@ export function neighboringEpisode(episode, direction, count) {
 export function nextPlayableSource(index, count) {
   return Number.isInteger(index) && Number.isInteger(count) && index >= 0 && index + 1 < count
     ? index + 1 : null;
+}
+
+// Prefer real season boundaries when supplied. Otherwise show clearly labelled
+// episode ranges instead of inventing season numbers for imported titles.
+export function episodeGroups(count, seasons = [], groupSize = 24) {
+  if (!Number.isInteger(count) || count < 1 || count > 300) return [];
+  if (Array.isArray(seasons) && seasons.length) {
+    const groups = seasons.map((season, index) => ({
+      start: season.start, end: season.end,
+      label: cleanText(season.name, 80) || `Season ${index + 1}`
+    }));
+    if (groups.every((group, index) => Number.isInteger(group.start) && Number.isInteger(group.end)
+      && group.start === (index ? groups[index - 1].end + 1 : 1)
+      && group.end >= group.start && group.end <= count)
+      && groups.at(-1).end === count) return groups;
+  }
+  const size = Number.isInteger(groupSize) && groupSize >= 1 && groupSize <= 100 ? groupSize : 24;
+  return Array.from({length: Math.ceil(count / size)}, (_, index) => {
+    const start = index * size + 1, end = Math.min(count, start + size - 1);
+    return {start, end, label: count <= size ? 'All episodes' : `Episodes ${start}–${end}`};
+  });
 }
