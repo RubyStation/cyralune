@@ -12,12 +12,14 @@ const demo = {id:'demo:001', name:'The Lunar Test Reel', type:'movie', episodes:
 function seedCatalog() {
   catalog.clear(); catalog.set(demo.id, demo);
   for (const item of ANVIL_CATALOG) catalog.set(item.id, item);
+  for (const item of data.animeCache) if (!catalog.has(item.id)) catalog.set(item.id, item);
 }
 seedCatalog();
 for (const title of data.titles) catalog.set(title.id, title);
 
 let selected = null, selectedEpisode = 1, currentSource = null, activeSources = [], activeIndex = -1;
 let localVideoUrl = '', localCaptionUrl = '', hls = null, searchSerial = 0, lastSavedSecond = -1;
+let hlsLibraryPromise = null;
 let activeVideoTab = 'anime', lastRenderedPage = '', detailReturnPage = 'videos', detailReturnTab = 'anime';
 const video = $('#video');
 const embed = $('#embed');
@@ -28,7 +30,19 @@ function status(message, error = false) {
 }
 
 function applyAccent() { document.documentElement.style.setProperty('--accent', data.accent); $('#accent-input').value = data.accent; }
+function applyPreferences() {
+  document.documentElement.dataset.posterSize = data.posterSize;
+  document.documentElement.dataset.posterColumns = data.posterColumns;
+  document.documentElement.classList.toggle('low-data-mode', data.lowDataMode);
+  $('#poster-size').value = data.posterSize;
+  $('#poster-columns').value = data.posterColumns;
+  $('#low-data-mode').checked = data.lowDataMode;
+  $('#player-dialog').classList.toggle('cinema-mode', data.cinemaMode);
+  $('#cinema-mode').setAttribute('aria-pressed', String(data.cinemaMode));
+  $('#cinema-mode').textContent = data.cinemaMode ? 'Exit Cinema Mode' : 'Cinema Mode';
+}
 applyAccent();
+applyPreferences();
 
 const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites'};
 const videoTabContent = {
@@ -75,7 +89,7 @@ window.addEventListener('hashchange', pageRoute);
 
 function itemCard(item) {
   const name = escapeHtml(item.name), format = escapeHtml(item.format || (item.type === 'tv' ? 'TV series' : item.type === 'anime' ? 'Anime' : 'Movie'));
-  const url = safeUrl(item.cover || '', {allowEmpty: true});
+  const url = data.lowDataMode ? '' : safeUrl(item.cover || '', {allowEmpty: true});
   const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}" alt="${name} poster" loading="lazy">` : ''}`;
   const progress = getLatestProgress(item.id);
   const subtitle = [item.year || '', format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
@@ -107,6 +121,23 @@ function renderAnime(items) {
   $('#anime-count').textContent = `${items.length} title${items.length === 1 ? '' : 's'}`;
 }
 
+function uniqueAnime(items) {
+  const seen = new Set();
+  return items.filter(item => {
+    const key = item.name.trim().toLocaleLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function localAnime(search = '') {
+  const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
+  const extra = [...data.titles.filter(item => item.type === 'anime'), ...data.animeCache]
+    .filter(item => words.every(word => `${item.name} ${item.genre || ''} ${item.description || ''} ${item.year || ''}`.toLocaleLowerCase().includes(word)));
+  return uniqueAnime([...searchAnvilCatalog(search), ...extra]);
+}
+
 const animeQuery = `query ($search: String) {
   Page(page: 1, perPage: 24) { media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
     id title { english romaji } episodes format averageScore coverImage { large }
@@ -116,15 +147,15 @@ const animeQuery = `query ($search: String) {
 
 async function loadAnime(search = '') {
   const request = ++searchSerial;
-  const saved = searchAnvilCatalog(search);
-  $('#anime-heading').textContent = search ? `Results for “${search}”` : 'The Anvil collection';
+  const saved = localAnime(search);
+  $('#anime-heading').textContent = search ? `Results for “${search}”` : 'The anime collection';
   $('#anime-status').classList.remove('error');
   renderAnime(saved);
-  if (!search) {
-    $('#anime-status').textContent = 'Seven saved anime titles — available even without an internet catalog connection. Video sources are added separately.';
+  if (data.lowDataMode) {
+    $('#anime-status').textContent = 'Low-Data Mode is on. Showing saved anime only; online discovery is paused.';
     return;
   }
-  $('#anime-status').textContent = 'Showing saved titles now. Checking for additional anime metadata…';
+  $('#anime-status').textContent = 'Showing saved anime now. Checking for more titles online…';
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
@@ -140,21 +171,24 @@ async function loadAnime(search = '') {
     if (request !== searchSerial) return;
     const online = payload.data.Page.media.map(row => {
       const item = {id:`anime:${row.id}`, name:cleanText(row.title?.english || row.title?.romaji, 120), type:'anime',
-        episodes:Math.min(300, Math.max(1, row.episodes || 1)), format:row.format || 'Anime', score:row.averageScore || 0,
+        episodes:row.episodes ? Math.min(300, Math.max(1, row.episodes)) : 0, format:row.format || 'Anime', score:row.averageScore || 0,
         cover:safeUrl(row.coverImage?.large || '') || '',
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
-      // Keep the original Anvil episode names and existing JJK progress ID.
+      // Preserve the original Anvil IDs and JJK episode names.
       if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) catalog.set(item.id, item);
       return item;
-    });
-    const savedNames = new Set(saved.map(item => item.name.toLocaleLowerCase()));
-    const items = [...saved, ...online.filter(item => !savedNames.has(item.name.toLocaleLowerCase()))];
+    }).filter(item => item.name);
+    const cache = new Map(data.animeCache.map(item => [item.id, item]));
+    for (const item of online) if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) cache.set(item.id, item);
+    data.animeCache = [...cache.values()].slice(-200);
+    save();
+    const items = uniqueAnime([...saved, ...online]);
     renderAnime(items);
-    $('#anime-status').textContent = 'Saved Anvil titles plus online metadata. Playable video sources must be added separately.';
+    $('#anime-status').textContent = 'Saved anime and additional online results. Discovered titles are now remembered for future visits; video sources are separate.';
   } catch (error) {
     if (request !== searchSerial) return;
     $('#anime-status').textContent = saved.length
-      ? 'Online search is unavailable, but the saved Anvil matches above still work.'
+      ? 'Online discovery is unavailable right now, but all saved anime remain visible.'
       : 'No saved matches, and online search is unavailable right now. Try another title or genre.';
     if (!saved.length) $('#anime-status').classList.add('error');
   }
@@ -167,7 +201,7 @@ function openDetails(id) {
     detailReturnPage = lastRenderedPage === 'home' ? 'home' : 'videos';
     detailReturnTab = activeVideoTab;
   }
-  const cover = safeUrl(selected.cover || '', {allowEmpty:true});
+  const cover = data.lowDataMode ? '' : safeUrl(selected.cover || '', {allowEmpty:true});
   const hasEpisodeList = Number.isInteger(selected.episodes) && selected.episodes > 0;
   $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : ''}</div>
     <div class="detail-content"><p class="kicker">${escapeHtml(selected.type.toUpperCase())} / CRYALUNE</p>
@@ -178,15 +212,30 @@ function openDetails(id) {
       ${selected.score ? `<span class="chip">★ ${(selected.score / 10).toFixed(1)} / 10</span>` : ''}
       <div class="button-row">${hasEpisodeList ? '<button type="button" class="button primary" data-action="play" data-episode="1">Start watching</button>' : ''}
       <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my favorites' : '♡ Add to my favorites'}</button></div></div>`;
-  const count = hasEpisodeList ? Math.min(300, selected.episodes) : 0;
+  renderEpisodes();
+  location.hash = '#detail'; pageRoute();
+}
+
+function episodeMark(key) {
+  return data.episodeMarks[key] || (data.progress[key]?.completed ? 'watched' : 'unwatched');
+}
+
+function renderEpisodes() {
+  if (!selected) return;
+  const count = Number.isInteger(selected.episodes) && selected.episodes > 0 ? Math.min(300, selected.episodes) : 0;
+  const marks = Array.from({length:count}, (_, i) => episodeMark(progressKey(selected.id, i + 1)));
+  const watched = marks.filter(mark => mark === 'watched').length;
+  const skipped = marks.filter(mark => mark === 'skipped').length;
+  $('#episode-progress-summary').textContent = count ? `${watched}/${count} watched${skipped ? ` · ${skipped} skipped` : ''}` : 'Episode list not yet imported';
   $('#episode-grid').innerHTML = count ? Array.from({length:count}, (_, i) => {
     const episode = i + 1, key = progressKey(selected.id, episode);
     const sources = availableSources(selected, episode).length;
     const time = data.progress[key]?.time || 0;
     const episodeTitle = selected.episodeTitles?.[i];
-    return `<button type="button" class="episode-button" data-action="play" data-episode="${episode}"><strong>${String(episode).padStart(2, '0')}</strong>${episodeTitle ? `<span class="episode-name">${escapeHtml(episodeTitle)}</span>` : ''}<small>${sources ? `${sources} source${sources === 1 ? '' : 's'}` : 'No source yet'}${time ? ` · ${Math.round(time / 60)}m watched` : ''}</small></button>`;
+    const mark = marks[i];
+    const markLabel = mark === 'watched' ? '✓ Watched' : mark === 'skipped' ? '↷ Skipped' : '○ Unwatched';
+    return `<div class="episode-entry is-${mark}"><button type="button" class="episode-button" data-action="play" data-episode="${episode}"><strong>${String(episode).padStart(2, '0')}</strong>${episodeTitle ? `<span class="episode-name">${escapeHtml(episodeTitle)}</span>` : ''}<small>${sources ? `${sources} source${sources === 1 ? '' : 's'}` : 'No source yet'}${time ? ` · ${Math.round(time / 60)}m played` : ''}</small></button><button type="button" class="episode-check is-${mark}" data-action="episode-mark" data-episode="${episode}" aria-label="Change episode ${episode} status. Currently ${mark}">${markLabel}</button></div>`;
   }).join('') : '<div class="empty-state">This title was in the Anvil gallery, but its episode list was not saved. The catalog card and details are restored; playback entries can be added once episode data is available.</div>';
-  location.hash = '#detail'; pageRoute();
 }
 
 function renderLocalTitles() {
@@ -272,6 +321,18 @@ function attachCaptions(url) {
   video.append(track);
 }
 
+function getHlsLibrary() {
+  if (window.Hls) return Promise.resolve(window.Hls);
+  if (!hlsLibraryPromise) hlsLibraryPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js';
+    script.onload = () => window.Hls ? resolve(window.Hls) : reject(Error('HLS library was unavailable'));
+    script.onerror = () => reject(Error('HLS library could not be downloaded'));
+    document.head.append(script);
+  }).catch(error => { hlsLibraryPromise = null; throw error; });
+  return hlsLibraryPromise;
+}
+
 function loadSource(index) {
   if (!Number.isInteger(index) || index < 0 || index >= activeSources.length) return;
   saveCurrentPosition();
@@ -294,10 +355,13 @@ function loadSource(index) {
     $('#player-status').textContent = 'Ready to play. Use the video controls for audio, subtitles, and fullscreen.';
   };
   if (source.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
-    if (!window.Hls?.isSupported()) { sourceFailed('HLS support is unavailable here'); return; }
-    hls = new window.Hls({maxBufferLength:30});
-    hls.on(window.Hls.Events.ERROR, (_, error) => { if (error.fatal) sourceFailed('HLS playback failed'); });
-    hls.loadSource(source.url); hls.attachMedia(video);
+    getHlsLibrary().then(Hls => {
+      if (currentSource !== source) return;
+      if (!Hls.isSupported()) { sourceFailed('HLS support is unavailable here'); return; }
+      hls = new Hls({maxBufferLength:30});
+      hls.on(Hls.Events.ERROR, (_, error) => { if (error.fatal) sourceFailed('HLS playback failed'); });
+      hls.loadSource(source.url); hls.attachMedia(video);
+    }).catch(() => { if (currentSource === source) sourceFailed('HLS support could not load'); });
   } else { video.src = source.url; video.load(); }
 }
 
@@ -325,9 +389,12 @@ video.addEventListener('ended', () => { if (currentSource) rememberProgress(vide
 
 function rememberProgress(time, duration, completed) {
   if (!selected || !Number.isFinite(time) || time < 0) return;
-  data.progress[currentKey()] = {title:selected.name, episode:selectedEpisode, time:Math.floor(time),
+  const key = currentKey();
+  data.progress[key] = {title:selected.name, episode:selectedEpisode, time:Math.floor(time),
     duration:Number.isFinite(duration) ? Math.floor(duration) : 0, completed, at:Date.now()};
+  if (completed) data.episodeMarks[key] = 'watched';
   save();
+  if (completed) renderEpisodes();
 }
 
 // Embedded players can report progress only if they document a postMessage contract.
@@ -350,6 +417,14 @@ document.addEventListener('click', event => {
   const action = button.dataset.action;
   if (action === 'detail') openDetails(button.dataset.id);
   if (action === 'play') openPlayer(Number(button.dataset.episode) || 1);
+  if (action === 'episode-mark' && selected) {
+    const episode = Number(button.dataset.episode);
+    if (!Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
+    const key = progressKey(selected.id, episode);
+    const previous = episodeMark(key);
+    data.episodeMarks[key] = previous === 'watched' ? 'skipped' : previous === 'skipped' ? 'unwatched' : 'watched';
+    save(); renderEpisodes();
+  }
   if (action === 'favorite' && selected) {
     data.favorites = data.favorites.includes(selected.id) ? data.favorites.filter(id => id !== selected.id) : [...data.favorites, selected.id];
     save(); openDetails(selected.id);
@@ -386,6 +461,7 @@ $('#home-search-form').addEventListener('submit', event => {
 });
 $('#anime-search-form').addEventListener('submit', event => { event.preventDefault(); loadAnime($('#anime-query').value.trim()); });
 $('#player-close').addEventListener('click', closePlayer);
+$('#cinema-mode').addEventListener('click', () => { data.cinemaMode = !data.cinemaMode; save(); applyPreferences(); });
 $('#player-dialog').addEventListener('close', closePlayer);
 $('#player-source').addEventListener('change', event => loadSource(Number(event.target.value)));
 $('#manage-source').addEventListener('click', openSourceEditor);
@@ -428,13 +504,23 @@ $('#title-form').addEventListener('submit', event => {
   if (!name || !Number.isInteger(episodes) || episodes < 1 || episodes > 300) return;
   const item = {id:`custom:${crypto.randomUUID()}`,name,type,episodes,description:cleanText($('#title-description').value,700)};
   data.titles.push(item); catalog.set(item.id,item); save(); $('#title-dialog').close(); event.target.reset();
-  const newTab = type === 'tv' ? 'shows' : 'movies';
-  location.hash = '#videos'; pageRoute(); selectVideoTab(newTab); renderLocalTitles();
+  const newTab = type === 'tv' ? 'shows' : type === 'anime' ? 'anime' : 'movies';
+  location.hash = '#videos'; pageRoute(); selectVideoTab(newTab);
+  if (type === 'anime') { $('#anime-query').value = ''; loadAnime(); }
+  else renderLocalTitles();
 });
 
 $('#accent-input').addEventListener('input', event => { data.accent = event.target.value; applyAccent(); save(); });
+$('#poster-size').addEventListener('change', event => { data.posterSize = event.target.value; save(); applyPreferences(); });
+$('#poster-columns').addEventListener('change', event => { data.posterColumns = event.target.value; save(); applyPreferences(); });
+$('#low-data-mode').addEventListener('change', event => {
+  data.lowDataMode = event.target.checked; save(); applyPreferences();
+  renderHomeProgress(); renderLocalTitles(); renderFavorites();
+  if (selected && lastRenderedPage === 'detail') openDetails(selected.id);
+  loadAnime($('#anime-query').value.trim());
+});
 $('#clear-progress').addEventListener('click', () => {
-  if (confirm('Clear all saved watch positions? Your sources and favorites will remain.')) { data.progress = {}; save(); renderHomeProgress(); }
+  if (confirm('Clear all saved watch positions? Your sources, favorites, and manual episode marks will remain.')) { data.progress = {}; save(); renderHomeProgress(); renderEpisodes(); }
 });
 $('#export-data').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -450,7 +536,7 @@ $('#import-data').addEventListener('change', async event => {
     if (!confirm('Replace this browser’s Cryalune library and progress with the imported backup?')) return;
     data = restoreData(imported); seedCatalog();
     for (const title of data.titles) catalog.set(title.id,title);
-    save(); applyAccent(); renderHomeProgress(); renderLocalTitles(); renderFavorites(); loadAnime(); pageRoute();
+    save(); applyAccent(); applyPreferences(); renderHomeProgress(); renderLocalTitles(); renderFavorites(); loadAnime(); pageRoute();
   } catch (error) { alert(`Import failed: ${error.message}`); }
   finally { event.target.value = ''; }
 });

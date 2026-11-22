@@ -163,6 +163,40 @@ body:has(.view[data-view="home"]:not([hidden])) {
   color:#f2f2f3;
   box-shadow:0 2px 9px #0005;
 }
+.library-layout-controls {display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap;margin:-8px 0 24px}
+.library-layout-controls label {display:flex;align-items:center;gap:8px;font-size:12px;color:#aeb1b8}
+.library-layout-controls select {background:#1b1f25;color:#e8e9eb;border:1px solid #ffffff32;border-radius:8px;padding:7px 11px}
+#pane-anime>.add-title {margin:0 0 22px}
+.setting-toggle {display:flex;align-items:center;gap:12px;color:#e0e2e6}
+.setting-toggle input {width:18px;height:18px;accent-color:#abb0ba}
+html[data-poster-size="small"] .card-grid {grid-template-columns:repeat(auto-fill,minmax(145px,1fr))}
+html[data-poster-size="large"] .card-grid {grid-template-columns:repeat(auto-fill,minmax(238px,1fr))}
+.episode-entry {display:flex;flex-direction:column;gap:7px;min-width:0}
+.episode-entry .episode-button {flex:1;width:100%}
+.episode-check {background:#161a20;color:#b8bcc5;border:1px solid #ffffff29;border-radius:10px;padding:7px 10px;font-size:12px;min-height:36px;text-align:center}
+.episode-check:hover {background:#252a33;color:#fff}
+.episode-check.is-watched {color:#b6dfc8;border-color:#75ad9170;background:#172820}
+.episode-check.is-skipped {color:#e6c69e;border-color:#b89c7370;background:#292218}
+.episode-entry.is-watched .episode-button {border-color:#7fae9460}
+.episode-entry.is-skipped .episode-button {opacity:.72}
+.player-top-actions {display:flex;align-items:center;gap:10px}
+.player-dialog.cinema-mode {width: min(97vw,1800px);max-height:97dvh;background:#0a0d12;padding:14px;border-color:#ffffff40}
+.player-dialog.cinema-mode .screen {height:calc(97dvh - 103px);aspect-ratio:auto;background:#030406}
+.player-dialog.cinema-mode .player-actions,.player-dialog.cinema-mode #player-status {display:none}
+.player-dialog.cinema-mode .player-top .kicker {display:none}
+.player-dialog.cinema-mode .player-top h2 {font-size:16px}
+.player-dialog.cinema-mode #cinema-mode {background:#373d47;border-color:#87909c;color:#fff}
+html.low-data-mode .media-card,html.low-data-mode .view {animation:none;transition:none}
+html.low-data-mode .poster img,html.low-data-mode .detail-poster img {display:none!important}
+html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
+  background:radial-gradient(ellipse at 50% 35%,#2c313b 0%,#171c24 45%,#0d1015 100%);
+}
+@media(min-width:701px) {
+  html[data-poster-columns="3"] .card-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
+  html[data-poster-columns="4"] .card-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
+  html[data-poster-columns="5"] .card-grid {grid-template-columns:repeat(5,minmax(0,1fr))}
+  html[data-poster-columns="6"] .card-grid {grid-template-columns:repeat(6,minmax(0,1fr))}
+}
 @media(max-width:700px) {
   .rail {background:#101319f4;border-top-color:#ffffff24}
   .rail-nav a {min-height:55px}
@@ -173,6 +207,12 @@ body:has(.view[data-view="home"]:not([hidden])) {
   .home-subtitle {font-size:9px;margin-bottom:26px}
   .video-tabs {width:100%;gap:3px;padding:5px}
   .video-tab {font-size:12px;padding:9px 13px}
+  .library-layout-controls {justify-content:flex-start;margin:0 0 24px}
+  html[data-poster-size="small"] .card-grid,html[data-poster-size="medium"] .card-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+  html[data-poster-size="large"] .card-grid {grid-template-columns:minmax(0,1fr)}
+  .player-top-actions {gap:6px}
+  #cinema-mode {font-size:11px;padding:6px 8px;min-height:36px}
+  .player-dialog.cinema-mode .screen {height:calc(95dvh - 100px)}
   body:has(.view[data-view="home"]:not([hidden])) {background-attachment:scroll;background-position:40% center}
 }
 @media(prefers-reduced-motion:reduce) {

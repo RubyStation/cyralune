@@ -8,6 +8,10 @@ static frontend.
 
 - Moonrise home screen with a centered identity and a calm charcoal design.
 - Videos section with Anime, Movies, TV Shows, and My Favorites tabs (Anime opens first).
+- Cinema Mode in the video player, manual watched/skipped/unwatched episode checklist,
+  Low-Data Mode, and adjustable poster sizes and cards per row.
+- Seven original Anvil anime entries bundled offline. Additional AniList discoveries
+  are remembered on this device, and missing titles can be added manually as anime.
 - Home, Videos, and Settings in one responsive site; no Links category.
 - AniList-powered title discovery, ratings, and official/promotional cover art.
 - A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
@@ -15,8 +19,10 @@ static frontend.
 - A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
   HLS.js loading; sandboxed third-party embeds when the provider permits it.
 - Per-episode source priority and fallback when a native stream fails.
+- HLS.js is loaded only when an HLS stream is selected, reducing initial downloads.
 - Native video controls for audio volume, subtitles, and fullscreen.
-- Watch progress, favorites, and sources saved in this browser. Historical website bookmarks remain in exported backups for safekeeping.
+- Watch progress, manual episode marks, appearance preferences, favorites, and sources
+  saved in this browser. Historical website bookmarks remain in exported backups for safekeeping.
 - JSON backup export/import. No source credentials should be stored here.
 
 **Not included:** Jujutsu Kaisen video files, a licensed anime-streaming API,

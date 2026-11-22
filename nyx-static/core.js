@@ -37,7 +37,8 @@ export function sortedSources(sources) {
 }
 
 export function defaultData() {
-  return {version: 1, lastPage: 'home', accent: '#abb0ba', favorites: [], progress: {}, sources: {}, websites: [], titles: []};
+  return {version: 1, lastPage: 'home', accent: '#abb0ba', favorites: [], progress: {}, sources: {}, websites: [], titles: [],
+    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false, posterSize: 'medium', posterColumns: 'auto'};
 }
 
 export function restoreData(raw) {
@@ -50,6 +51,12 @@ export function restoreData(raw) {
     ...initial,
     lastPage: pages.includes(raw.lastPage) ? raw.lastPage : initial.lastPage,
     accent: color,
+    cinemaMode: raw.cinemaMode === true,
+    lowDataMode: raw.lowDataMode === true,
+    posterSize: ['small', 'medium', 'large'].includes(raw.posterSize) ? raw.posterSize : 'medium',
+    posterColumns: ['auto', '3', '4', '5', '6'].includes(String(raw.posterColumns)) ? String(raw.posterColumns) : 'auto',
+    episodeMarks: Object.fromEntries(Object.entries(raw.episodeMarks && typeof raw.episodeMarks === 'object' && !Array.isArray(raw.episodeMarks) ? raw.episodeMarks : {})
+      .filter(([key, mark]) => key.length <= 150 && ['watched', 'skipped'].includes(mark)).slice(0, 10000)),
     favorites: Array.isArray(raw.favorites) ? raw.favorites.filter(v => typeof v === 'string').slice(0, 3000) : [],
     progress: raw.progress && typeof raw.progress === 'object' && !Array.isArray(raw.progress) ? raw.progress : {},
     sources: Object.fromEntries(Object.entries(raw.sources && typeof raw.sources === 'object' && !Array.isArray(raw.sources) ? raw.sources : {})
@@ -59,9 +66,17 @@ export function restoreData(raw) {
       name: cleanText(v?.name, 70), url: safeUrl(v?.url)
     })).filter(v => v.name && v.url) : [],
     titles: Array.isArray(raw.titles) ? raw.titles.slice(0, 500).map(v => ({
-      id: cleanText(v?.id, 100), name: cleanText(v?.name, 100), type: v?.type === 'tv' ? 'tv' : 'movie',
+      id: cleanText(v?.id, 100), name: cleanText(v?.name, 100), type: v?.type === 'anime' ? 'anime' : v?.type === 'tv' ? 'tv' : 'movie',
       description: cleanText(v?.description, 700), episodes: Math.max(1, Math.min(300, Number(v?.episodes) || 1))
-    })).filter(v => v.id && v.name) : []
+    })).filter(v => v.id && v.name) : [],
+    animeCache: Array.isArray(raw.animeCache) ? raw.animeCache.slice(0, 250).map(v => ({
+      id: cleanText(v?.id, 100), name: cleanText(v?.name, 120), type: 'anime',
+      format: cleanText(v?.format, 30), genre: cleanText(v?.genre, 100),
+      episodes: Number.isInteger(v?.episodes) && v.episodes > 0 ? Math.min(300, v.episodes) : 0,
+      score: Number.isFinite(v?.score) ? Math.max(0, Math.min(100, v.score)) : 0,
+      year: Number.isInteger(v?.year) && v.year >= 1900 && v.year <= 2100 ? v.year : 0,
+      description: cleanText(v?.description, 1000), cover: safeUrl(v?.cover) || ''
+    })).filter(v => v.id.startsWith('anime:') && v.name) : []
   };
 }
 
