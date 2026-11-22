@@ -26,7 +26,9 @@ static frontend.
   The remaining series show sharp portraits in the right side of the hero
   instead of stretched/blurred poster backgrounds. Low-Data Mode still hides
   artwork downloads by design.
-- A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
+- A built-in **Jujutsu Kaisen Season 1** title/episode listing, with a
+  **45-second 1080p MP4 playback test** on Episode 1. The test is not a full episode
+  and does not change watched progress.
 - An original short demo MP4 and caption file so you can test the player.
 - A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
   HLS.js loading from locally bundled Apache-2.0-licensed code; sandboxed
@@ -41,7 +43,7 @@ static frontend.
   saved in this browser. Historical website bookmarks remain in exported backups for safekeeping.
 - JSON backup export/import. No source credentials should be stored here.
 
-**Not included:** Jujutsu Kaisen video files, a licensed anime-streaming API,
+**Not included:** Full Jujutsu Kaisen episodes, a licensed anime-streaming API,
 the N7X VPN/relay, or a server that can proxy restricted sites. Being able to
 play a source depends on the source owner's permissions, your browser, and the
 network you use. This app does not defeat a Chromebook's web restrictions.
@@ -65,8 +67,9 @@ work on an ordinary static web host.
 To test playback: Videos → Movies → **The Lunar Test Reel** → **Episode 1**.
 The bundled demo is an original test clip, not a JJK episode.
 
-For JJK: Videos → Anime → search Jujutsu Kaisen → select an episode → Manage sources
-or choose a video file you already own and are permitted to use.
+For the 1080p sample: Videos → Anime → Jujutsu Kaisen → Episode 1 → Play.
+The sample is 45 seconds only. To watch a full episode, choose a video file
+you already own and are permitted to use, or add an authorized source.
 
 ### Connect actual episodes to the player
 

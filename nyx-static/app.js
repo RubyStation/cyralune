@@ -497,8 +497,14 @@ function availableSources(item, episode) {
   const key = progressKey(item.id, episode);
   const stored = [...(PUBLISHED_SOURCES[key] || []), ...(data.sources[key] || [])].map(normalizedSource).filter(Boolean);
   if (item.id === demo.id && episode === 1) stored.unshift({id:'built-in-demo',name:'Original demo clip',type:'mp4',url:'./assets/cyralune-demo.mp4',captions:'./assets/cyralune-demo.vtt',priority:0});
+  if (item.id === 'anime:113415' && episode === 1) stored.unshift({
+    id:'jjk-1080p-preview', name:'1080p playback test · 45 seconds (not full episode)',
+    type:'mp4', url:'./assets/jjk-episode-1-1080p-test.mp4', captions:'', priority:0, preview:true
+  });
   return sortedSources(stored);
 }
+
+function isPreviewClip(source = currentSource) { return source?.preview === true; }
 
 function openSourceEditor() {
   if (!selected) return;
@@ -534,7 +540,7 @@ function clearLocalAttachments() {
 }
 
 function saveCurrentPosition() {
-  if (currentSource && currentSource.type !== 'embed' && Number.isFinite(video.currentTime) && video.currentTime > 0) {
+  if (currentSource && !isPreviewClip() && currentSource.type !== 'embed' && Number.isFinite(video.currentTime) && video.currentTime > 0) {
     rememberProgress(video.currentTime, video.duration, video.ended);
   }
 }
@@ -677,6 +683,11 @@ function loadSource(index) {
   const previous = saved && !saved.completed ? Number(saved.time) || 0 : 0;
   video.onloadedmetadata = () => {
     if (currentSource !== source) return;
+    if (isPreviewClip(source)) {
+      $('#player-status').textContent = '1080p test clip · 45 seconds only. This is not the full episode and will not mark it watched.';
+      if (pendingAutoplay) { pendingAutoplay = false; video.play().catch(() => {}); }
+      return;
+    }
     const resume = previous > 0 && (Number.isFinite(video.duration) ? previous < video.duration - 12 : true);
     if (resume) video.currentTime = previous;
     const minute = Math.floor(previous / 60), second = Math.floor(previous % 60);
@@ -721,14 +732,15 @@ function sourceFailed(message) {
 
 video.addEventListener('error', () => { if (currentSource?.type !== 'embed' && video.currentSrc) sourceFailed('Video could not load'); });
 video.addEventListener('timeupdate', () => {
-  if (!selected || !Number.isFinite(video.currentTime)) return;
+  if (!selected || isPreviewClip() || !Number.isFinite(video.currentTime)) return;
   const second = Math.floor(video.currentTime);
   if (second === lastSavedSecond || second % 5 !== 0) return;
   lastSavedSecond = second; rememberProgress(second, video.duration, false);
 });
-video.addEventListener('pause', () => { if (currentSource) rememberProgress(video.currentTime, video.duration, false); });
+video.addEventListener('pause', () => { if (currentSource && !isPreviewClip()) rememberProgress(video.currentTime, video.duration, false); });
 video.addEventListener('ended', () => {
   if (!currentSource) return;
+  if (isPreviewClip()) { $('#player-status').textContent = 'Test complete. The full episode was not marked watched.'; return; }
   rememberProgress(video.currentTime, video.duration, true);
   if (!data.autoNext) { $('#player-status').textContent = 'Episode complete. Choose Next episode when you are ready.'; return; }
   const next = neighboringEpisode(selectedEpisode, 1, selected?.episodes || 0);
