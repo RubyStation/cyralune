@@ -9,9 +9,11 @@ static frontend.
 - Moonrise home screen with a centered identity and a calm charcoal design.
 - Videos section with Anime, Movies, TV Shows, and My Favorites tabs (Anime opens first).
 - Cinema Mode in the video player, manual watched/skipped/unwatched episode checklist,
-  Low-Data Mode, and adjustable poster sizes and cards per row.
+  Low-Data Mode, and an adjustable Small / Medium / Large poster dropdown.
 - Seven original Anvil anime entries bundled offline. Additional AniList discoveries
-  are remembered on this device, and missing titles can be added manually as anime.
+  are remembered on this device. A separate title-only offline discovery index
+  provides 99 additional anime names without requiring the AniList connection;
+  episode data and video sources are not invented. Missing titles can be added manually.
 - Home, Videos, and Settings in one responsive site; no Links category.
 - AniList-powered title discovery, ratings, and official/promotional cover art.
 - A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).

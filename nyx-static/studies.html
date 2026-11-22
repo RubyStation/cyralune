@@ -49,7 +49,7 @@
       </section>
 
       <section data-view="videos" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE COLLECTION</p><h1 id="videos-heading">Anime</h1><p id="videos-description">Browse the restored Anvil collection or search for a title.</p></div>
+        <div class="page-intro"><p class="kicker">THE COLLECTION</p><h1 id="videos-heading">Anime</h1><p id="videos-description">Explore the original Anvil titles and a larger offline anime discovery index.</p></div>
         <div class="video-tabs" role="tablist" aria-label="Video categories">
           <button type="button" class="video-tab active" id="tab-anime" data-video-tab="anime" role="tab" aria-controls="pane-anime" aria-selected="true">Anime</button>
           <button type="button" class="video-tab" id="tab-movies" data-video-tab="movies" role="tab" aria-controls="pane-movies" aria-selected="false">Movies</button>
@@ -57,8 +57,8 @@
           <button type="button" class="video-tab" id="tab-favorites" data-video-tab="favorites" role="tab" aria-controls="pane-favorites" aria-selected="false">♡ My Favorites</button>
         </div>
         <div class="library-layout-controls" aria-label="Poster layout">
-          <label for="poster-size">Poster size <select id="poster-size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
-          <label for="poster-columns">Per row <select id="poster-columns"><option value="auto">Auto</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
+          <label for="poster-size">Poster size</label>
+          <span class="poster-select"><select id="poster-size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></span>
         </div>
         <div id="pane-anime" data-video-pane="anime" role="tabpanel" aria-labelledby="tab-anime">
           <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, such as Jujutsu Kaisen" maxlength="100"><button class="button primary" type="submit">Search</button></form>

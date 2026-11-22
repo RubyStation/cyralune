@@ -1,5 +1,6 @@
 import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey} from './core.js';
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
+import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -12,7 +13,8 @@ const demo = {id:'demo:001', name:'The Lunar Test Reel', type:'movie', episodes:
 function seedCatalog() {
   catalog.clear(); catalog.set(demo.id, demo);
   for (const item of ANVIL_CATALOG) catalog.set(item.id, item);
-  for (const item of data.animeCache) if (!catalog.has(item.id)) catalog.set(item.id, item);
+  for (const item of OFFLINE_ANIME) catalog.set(item.id, item);
+  for (const item of data.animeCache) if (!ANVIL_CATALOG.some(saved => saved.id === item.id)) catalog.set(item.id, item);
 }
 seedCatalog();
 for (const title of data.titles) catalog.set(title.id, title);
@@ -32,10 +34,8 @@ function status(message, error = false) {
 function applyAccent() { document.documentElement.style.setProperty('--accent', data.accent); $('#accent-input').value = data.accent; }
 function applyPreferences() {
   document.documentElement.dataset.posterSize = data.posterSize;
-  document.documentElement.dataset.posterColumns = data.posterColumns;
   document.documentElement.classList.toggle('low-data-mode', data.lowDataMode);
   $('#poster-size').value = data.posterSize;
-  $('#poster-columns').value = data.posterColumns;
   $('#low-data-mode').checked = data.lowDataMode;
   $('#player-dialog').classList.toggle('cinema-mode', data.cinemaMode);
   $('#cinema-mode').setAttribute('aria-pressed', String(data.cinemaMode));
@@ -46,7 +46,7 @@ applyPreferences();
 
 const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites'};
 const videoTabContent = {
-  anime: ['Anime', 'Browse the restored Anvil collection or search for a title.'],
+  anime: ['Anime', 'Explore the original Anvil titles and a larger offline anime discovery index.'],
   movies: ['Movies', 'Your films and their available sources.'],
   shows: ['TV Shows', 'Keep every series and episode together.'],
   favorites: ['My Favorites', 'Titles you have saved to return to later.']
@@ -135,7 +135,7 @@ function localAnime(search = '') {
   const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
   const extra = [...data.titles.filter(item => item.type === 'anime'), ...data.animeCache]
     .filter(item => words.every(word => `${item.name} ${item.genre || ''} ${item.description || ''} ${item.year || ''}`.toLocaleLowerCase().includes(word)));
-  return uniqueAnime([...searchAnvilCatalog(search), ...extra]);
+  return uniqueAnime([...searchAnvilCatalog(search), ...extra, ...searchOfflineAnime(search)]);
 }
 
 const animeQuery = `query ($search: String) {
@@ -170,7 +170,9 @@ async function loadAnime(search = '') {
     if (!Array.isArray(payload?.data?.Page?.media)) throw Error('Catalog response was incomplete');
     if (request !== searchSerial) return;
     const online = payload.data.Page.media.map(row => {
-      const item = {id:`anime:${row.id}`, name:cleanText(row.title?.english || row.title?.romaji, 120), type:'anime',
+      const name = cleanText(row.title?.english || row.title?.romaji, 120);
+      const offline = OFFLINE_ANIME.find(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+      const item = {id:offline?.id || `anime:${row.id}`, name:offline?.name || name, type:'anime',
         episodes:row.episodes ? Math.min(300, Math.max(1, row.episodes)) : 0, format:row.format || 'Anime', score:row.averageScore || 0,
         cover:safeUrl(row.coverImage?.large || '') || '',
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
@@ -182,7 +184,7 @@ async function loadAnime(search = '') {
     for (const item of online) if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) cache.set(item.id, item);
     data.animeCache = [...cache.values()].slice(-200);
     save();
-    const items = uniqueAnime([...saved, ...online]);
+    const items = localAnime(search);
     renderAnime(items);
     $('#anime-status').textContent = 'Saved anime and additional online results. Discovered titles are now remembered for future visits; video sources are separate.';
   } catch (error) {
@@ -512,7 +514,6 @@ $('#title-form').addEventListener('submit', event => {
 
 $('#accent-input').addEventListener('input', event => { data.accent = event.target.value; applyAccent(); save(); });
 $('#poster-size').addEventListener('change', event => { data.posterSize = event.target.value; save(); applyPreferences(); });
-$('#poster-columns').addEventListener('change', event => { data.posterColumns = event.target.value; save(); applyPreferences(); });
 $('#low-data-mode').addEventListener('change', event => {
   data.lowDataMode = event.target.checked; save(); applyPreferences();
   renderHomeProgress(); renderLocalTitles(); renderFavorites();

@@ -50,17 +50,17 @@ test('invalid backup fields are constrained when restored', () => {
 });
 
 test('viewing preferences, checklist marks, and cached anime survive backup restoration', () => {
-  const data = restoreData({version:1, cinemaMode:true, lowDataMode:true, posterSize:'large', posterColumns:'5',
+  const data = restoreData({version:1, cinemaMode:true, lowDataMode:true, posterSize:'large',
     episodeMarks:{'anime:113415:e1':'watched','anime:113415:e2':'skipped',invalid:'bad'},
     animeCache:[{id:'anime:100',name:'Saved discovery',type:'anime',episodes:12,cover:'https://example.org/poster.jpg'},
+      {id:'offline:naruto',name:'Naruto',type:'anime',episodes:220},
       {id:'unexpected',name:'Rejected title'}],
     titles:[{id:'custom:1',name:'Added anime',type:'anime',episodes:6}]});
   assert.equal(data.cinemaMode, true);
   assert.equal(data.lowDataMode, true);
   assert.equal(data.posterSize, 'large');
-  assert.equal(data.posterColumns, '5');
   assert.deepEqual(data.episodeMarks, {'anime:113415:e1':'watched','anime:113415:e2':'skipped'});
-  assert.equal(data.animeCache.length, 1);
+  assert.equal(data.animeCache.length, 2);
   assert.equal(data.animeCache[0].name, 'Saved discovery');
   assert.equal(data.titles[0].type, 'anime');
   const legacy = restoreData({version:1});

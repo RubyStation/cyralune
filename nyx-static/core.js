@@ -38,7 +38,7 @@ export function sortedSources(sources) {
 
 export function defaultData() {
   return {version: 1, lastPage: 'home', accent: '#abb0ba', favorites: [], progress: {}, sources: {}, websites: [], titles: [],
-    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false, posterSize: 'medium', posterColumns: 'auto'};
+    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false, posterSize: 'medium'};
 }
 
 export function restoreData(raw) {
@@ -54,7 +54,6 @@ export function restoreData(raw) {
     cinemaMode: raw.cinemaMode === true,
     lowDataMode: raw.lowDataMode === true,
     posterSize: ['small', 'medium', 'large'].includes(raw.posterSize) ? raw.posterSize : 'medium',
-    posterColumns: ['auto', '3', '4', '5', '6'].includes(String(raw.posterColumns)) ? String(raw.posterColumns) : 'auto',
     episodeMarks: Object.fromEntries(Object.entries(raw.episodeMarks && typeof raw.episodeMarks === 'object' && !Array.isArray(raw.episodeMarks) ? raw.episodeMarks : {})
       .filter(([key, mark]) => key.length <= 150 && ['watched', 'skipped'].includes(mark)).slice(0, 10000)),
     favorites: Array.isArray(raw.favorites) ? raw.favorites.filter(v => typeof v === 'string').slice(0, 3000) : [],
@@ -76,7 +75,7 @@ export function restoreData(raw) {
       score: Number.isFinite(v?.score) ? Math.max(0, Math.min(100, v.score)) : 0,
       year: Number.isInteger(v?.year) && v.year >= 1900 && v.year <= 2100 ? v.year : 0,
       description: cleanText(v?.description, 1000), cover: safeUrl(v?.cover) || ''
-    })).filter(v => v.id.startsWith('anime:') && v.name) : []
+    })).filter(v => (v.id.startsWith('anime:') || v.id.startsWith('offline:')) && v.name) : []
   };
 }
 
