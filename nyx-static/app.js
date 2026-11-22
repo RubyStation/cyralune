@@ -1,4 +1,5 @@
 import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey} from './core.js';
+import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -8,9 +9,11 @@ catch { data = defaultData(); }
 const save = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch { status('Browser storage is full. Export a backup from Settings.', true); } };
 const catalog = new Map();
 const demo = {id:'demo:001', name:'The Lunar Test Reel', type:'movie', episodes:1, description:'An original short test video with sound and subtitles.', format:'Original short'};
-const jjk = {id:'anime:113415', name:'Jujutsu Kaisen', type:'anime', episodes:24, description:'An anime action series. Select an episode to attach an authorized source.', format:'TV', score:0};
-catalog.set(demo.id, demo);
-catalog.set(jjk.id, jjk);
+function seedCatalog() {
+  catalog.clear(); catalog.set(demo.id, demo);
+  for (const item of ANVIL_CATALOG) catalog.set(item.id, item);
+}
+seedCatalog();
 for (const title of data.titles) catalog.set(title.id, title);
 
 let selected = null, selectedEpisode = 1, currentSource = null, activeSources = [], activeIndex = -1;
@@ -44,13 +47,18 @@ window.addEventListener('hashchange', pageRoute);
 function itemCard(item) {
   const name = escapeHtml(item.name), format = escapeHtml(item.format || (item.type === 'tv' ? 'TV series' : item.type === 'anime' ? 'Anime' : 'Movie'));
   const url = safeUrl(item.cover || '', {allowEmpty: true});
-  const poster = url ? `<img src="${escapeHtml(url)}" alt="${name} poster" loading="lazy">` : `<span class="poster-placeholder">${name}</span>`;
+  const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}" alt="${name} poster" loading="lazy">` : ''}`;
   const progress = getLatestProgress(item.id);
-  const subtitle = [format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
+  const subtitle = [item.year || '', format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
   return `<button type="button" class="media-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}">
     <div class="poster">${poster}${progress ? `<span class="chip">${progress.time < 60 ? '&lt;1m' : `${Math.round(progress.time / 60)}m`} watched</span>` : ''}</div>
-    <div class="media-caption"><strong>${name}</strong><small>${escapeHtml(subtitle)}</small></div></button>`;
+    <div class="media-caption"><strong>${name}</strong><small>${escapeHtml(subtitle)}</small>${item.genre ? `<span class="genre-label">${escapeHtml(item.genre)}</span>` : ''}</div></button>`;
 }
+
+// Keep the title visible if its remote poster host is unavailable at school.
+document.addEventListener('error', event => {
+  if (event.target.matches?.('.poster img, .detail-poster img')) event.target.remove();
+}, true);
 
 function getLatestProgress(id) {
   return Object.entries(data.progress).filter(([key]) => key.startsWith(`${id}:e`))
@@ -79,8 +87,15 @@ const animeQuery = `query ($search: String) {
 
 async function loadAnime(search = '') {
   const request = ++searchSerial;
-  $('#anime-heading').textContent = search ? `Results for “${search}”` : 'Popular anime';
-  $('#anime-status').textContent = 'Loading anime metadata…';
+  const saved = searchAnvilCatalog(search);
+  $('#anime-heading').textContent = search ? `Results for “${search}”` : 'The Anvil collection';
+  $('#anime-status').classList.remove('error');
+  renderAnime(saved);
+  if (!search) {
+    $('#anime-status').textContent = 'Seven saved anime titles — available even without an internet catalog connection. Video sources are added separately.';
+    return;
+  }
+  $('#anime-status').textContent = 'Showing saved titles now. Checking for additional anime metadata…';
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
@@ -94,20 +109,25 @@ async function loadAnime(search = '') {
     const payload = await response.json();
     if (!Array.isArray(payload?.data?.Page?.media)) throw Error('Catalog response was incomplete');
     if (request !== searchSerial) return;
-    const items = payload.data.Page.media.map(row => {
+    const online = payload.data.Page.media.map(row => {
       const item = {id:`anime:${row.id}`, name:cleanText(row.title?.english || row.title?.romaji, 120), type:'anime',
         episodes:Math.min(300, Math.max(1, row.episodes || 1)), format:row.format || 'Anime', score:row.averageScore || 0,
         cover:safeUrl(row.coverImage?.large || '') || '',
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
-      catalog.set(item.id, item); return item;
+      // Keep the original Anvil episode names and existing JJK progress ID.
+      if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) catalog.set(item.id, item);
+      return item;
     });
+    const savedNames = new Set(saved.map(item => item.name.toLocaleLowerCase()));
+    const items = [...saved, ...online.filter(item => !savedNames.has(item.name.toLocaleLowerCase()))];
     renderAnime(items);
-    $('#anime-status').textContent = 'Metadata only — playable video sources must be added separately.';
+    $('#anime-status').textContent = 'Saved Anvil titles plus online metadata. Playable video sources must be added separately.';
   } catch (error) {
     if (request !== searchSerial) return;
-    renderAnime(search && !jjk.name.toLowerCase().includes(search.toLowerCase()) ? [] : [jjk]);
-    $('#anime-status').textContent = 'Anime metadata is temporarily unavailable. The built-in JJK entry is still accessible.';
-    $('#anime-status').classList.add('error');
+    $('#anime-status').textContent = saved.length
+      ? 'Online search is unavailable, but the saved Anvil matches above still work.'
+      : 'No saved matches, and online search is unavailable right now. Try another title or genre.';
+    if (!saved.length) $('#anime-status').classList.add('error');
   }
 }
 
@@ -115,20 +135,24 @@ function openDetails(id) {
   selected = catalog.get(id);
   if (!selected) { status('This title must be loaded again from the catalog.', true); location.hash = '#anime'; return; }
   const cover = safeUrl(selected.cover || '', {allowEmpty:true});
-  $('#detail-head').innerHTML = `<div class="detail-poster">${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : '☾'}</div>
-    <div class="detail-content"><p class="kicker">${escapeHtml(selected.type.toUpperCase())} / CYRALUNE</p>
+  const hasEpisodeList = Number.isInteger(selected.episodes) && selected.episodes > 0;
+  $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : ''}</div>
+    <div class="detail-content"><p class="kicker">${escapeHtml(selected.type.toUpperCase())} / CRYALUNE</p>
       <h1>${escapeHtml(selected.name)}</h1><p>${escapeHtml(selected.description || 'A title in your personal collection.')}</p>
-      <span class="chip">${selected.episodes || 1} episode${selected.episodes === 1 ? '' : 's'}</span>
+      ${selected.genre ? `<span class="chip">${escapeHtml(selected.genre)}</span>` : ''}
+      ${selected.year ? `<span class="chip">${escapeHtml(selected.year)}</span>` : ''}
+      <span class="chip">${hasEpisodeList ? `${selected.episodes} episode${selected.episodes === 1 ? '' : 's'}` : 'Episode list not yet imported'}</span>
       ${selected.score ? `<span class="chip">★ ${(selected.score / 10).toFixed(1)} / 10</span>` : ''}
-      <div class="button-row"><button type="button" class="button primary" data-action="play" data-episode="1">Start watching</button>
+      <div class="button-row">${hasEpisodeList ? '<button type="button" class="button primary" data-action="play" data-episode="1">Start watching</button>' : ''}
       <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my list' : '♡ Add to my list'}</button></div></div>`;
-  const count = Math.min(300, Math.max(1, selected.episodes || 1));
-  $('#episode-grid').innerHTML = Array.from({length:count}, (_, i) => {
+  const count = hasEpisodeList ? Math.min(300, selected.episodes) : 0;
+  $('#episode-grid').innerHTML = count ? Array.from({length:count}, (_, i) => {
     const episode = i + 1, key = progressKey(selected.id, episode);
     const sources = availableSources(selected, episode).length;
     const time = data.progress[key]?.time || 0;
-    return `<button type="button" class="episode-button" data-action="play" data-episode="${episode}"><strong>${String(episode).padStart(2, '0')}</strong><small>${sources ? `${sources} source${sources === 1 ? '' : 's'}` : 'No source yet'}${time ? ` · ${Math.round(time / 60)}m watched` : ''}</small></button>`;
-  }).join('');
+    const episodeTitle = selected.episodeTitles?.[i];
+    return `<button type="button" class="episode-button" data-action="play" data-episode="${episode}"><strong>${String(episode).padStart(2, '0')}</strong>${episodeTitle ? `<span class="episode-name">${escapeHtml(episodeTitle)}</span>` : ''}<small>${sources ? `${sources} source${sources === 1 ? '' : 's'}` : 'No source yet'}${time ? ` · ${Math.round(time / 60)}m watched` : ''}</small></button>`;
+  }).join('') : '<div class="empty-state">This title was in the Anvil gallery, but its episode list was not saved. The catalog card and details are restored; playback entries can be added once episode data is available.</div>';
   location.hash = '#detail'; pageRoute();
 }
 
@@ -205,7 +229,8 @@ function openPlayer(episode) {
   if (!selected) return;
   selectedEpisode = episode;
   lastSavedSecond = -1;
-  $('#player-title').textContent = `${selected.name} · Episode ${episode}`;
+  const episodeTitle = selected.episodeTitles?.[episode - 1];
+  $('#player-title').textContent = `${selected.name} · Episode ${episode}${episodeTitle ? `: ${episodeTitle}` : ''}`;
   activeSources = availableSources(selected, selectedEpisode);
   buildPlayerSourcePicker();
   $('#player-dialog').showModal();
@@ -380,16 +405,16 @@ $('#clear-progress').addEventListener('click', () => {
 $('#export-data').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = 'cyralune-backup.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+  a.href = url; a.download = 'cryalune-backup.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
 });
 $('#import-data').addEventListener('change', async event => {
   const file = event.target.files?.[0]; if (!file) return;
   if (file.size > 5_000_000) { alert('The backup file is too large.'); return; }
   try {
     const imported = JSON.parse(await file.text());
-    if (imported?.version !== 1) throw Error('Not a Cyralune v1 backup');
-    if (!confirm('Replace this browser’s Cyralune library and progress with the imported backup?')) return;
-    data = restoreData(imported); catalog.clear(); catalog.set(demo.id,demo); catalog.set(jjk.id,jjk);
+    if (imported?.version !== 1) throw Error('Not a Cryalune v1 backup');
+    if (!confirm('Replace this browser’s Cryalune library and progress with the imported backup?')) return;
+    data = restoreData(imported); seedCatalog();
     for (const title of data.titles) catalog.set(title.id,title);
     save(); applyAccent(); renderHomeProgress(); renderWebsites(); renderLocalTitles(); renderFavorites(); loadAnime(); pageRoute();
   } catch (error) { alert(`Import failed: ${error.message}`); }
