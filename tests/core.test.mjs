@@ -58,12 +58,12 @@ test('viewing preferences, checklist marks, and cached anime survive backup rest
     titles:[{id:'custom:1',name:'Added anime',type:'anime',episodes:6}]});
   assert.equal(data.cinemaMode, true);
   assert.equal(data.lowDataMode, true);
-  assert.equal(data.posterSize, 'large');
+  assert.equal('posterSize' in data, false);
   assert.deepEqual(data.episodeMarks, {'anime:113415:e1':'watched','anime:113415:e2':'skipped'});
   assert.equal(data.animeCache.length, 2);
   assert.equal(data.animeCache[0].name, 'Saved discovery');
   assert.equal(data.titles[0].type, 'anime');
   const legacy = restoreData({version:1});
   assert.equal(legacy.lowDataMode, false);
-  assert.equal(legacy.posterSize, 'medium');
+  assert.equal('posterSize' in legacy, false);
 });

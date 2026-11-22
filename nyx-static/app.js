@@ -13,8 +13,9 @@ const demo = {id:'demo:001', name:'The Lunar Test Reel', type:'movie', episodes:
 function seedCatalog() {
   catalog.clear(); catalog.set(demo.id, demo);
   for (const item of ANVIL_CATALOG) catalog.set(item.id, item);
-  for (const item of OFFLINE_ANIME) catalog.set(item.id, item);
   for (const item of data.animeCache) if (!ANVIL_CATALOG.some(saved => saved.id === item.id)) catalog.set(item.id, item);
+  // Source-checked guides override stale metadata cached in older browser sessions.
+  for (const item of OFFLINE_ANIME) catalog.set(item.id, item);
 }
 seedCatalog();
 for (const title of data.titles) catalog.set(title.id, title);
@@ -33,9 +34,7 @@ function status(message, error = false) {
 
 function applyAccent() { document.documentElement.style.setProperty('--accent', data.accent); $('#accent-input').value = data.accent; }
 function applyPreferences() {
-  document.documentElement.dataset.posterSize = data.posterSize;
   document.documentElement.classList.toggle('low-data-mode', data.lowDataMode);
-  $('#poster-size').value = data.posterSize;
   $('#low-data-mode').checked = data.lowDataMode;
   $('#player-dialog').classList.toggle('cinema-mode', data.cinemaMode);
   $('#cinema-mode').setAttribute('aria-pressed', String(data.cinemaMode));
@@ -87,9 +86,14 @@ function pageRoute() {
 }
 window.addEventListener('hashchange', pageRoute);
 
+function trustedCover(raw) {
+  if (typeof raw === 'string' && /^\.\/assets\/posters\/[a-z0-9-]+\.jpg$/.test(raw)) return raw;
+  return safeUrl(raw || '', {allowEmpty:true}) || '';
+}
+
 function itemCard(item) {
   const name = escapeHtml(item.name), format = escapeHtml(item.format || (item.type === 'tv' ? 'TV series' : item.type === 'anime' ? 'Anime' : 'Movie'));
-  const url = data.lowDataMode ? '' : safeUrl(item.cover || '', {allowEmpty: true});
+  const url = data.lowDataMode ? '' : trustedCover(item.cover);
   const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}" alt="${name} poster" loading="lazy">` : ''}`;
   const progress = getLatestProgress(item.id);
   const subtitle = [item.year || '', format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
@@ -116,9 +120,34 @@ function renderHomeProgress() {
   $('#home-progress').innerHTML = items.length ? items.map(itemCard).join('') : `<div class="empty-state">Nothing watched yet. Start with the original demo reel or add a source to an episode.</div>`;
 }
 
-function renderAnime(items) {
-  $('#anime-grid').innerHTML = items.length ? items.map(itemCard).join('') : '<div class="empty-state">No matching anime found.</div>';
+const ANIME_PAGE_SIZE = 20;
+let animePage = 1;
+let animeResults = [];
+function renderAnime(items, {resetPage = false} = {}) {
+  animeResults = items;
+  if (resetPage) animePage = 1;
+  const totalPages = Math.max(1, Math.ceil(items.length / ANIME_PAGE_SIZE));
+  animePage = Math.min(animePage, totalPages);
+  const start = (animePage - 1) * ANIME_PAGE_SIZE;
+  const visible = items.slice(start, start + ANIME_PAGE_SIZE);
+  $('#anime-grid').innerHTML = visible.length ? visible.map(itemCard).join('') : '<div class="empty-state">No matching anime found. Try another title or genre.</div>';
   $('#anime-count').textContent = `${items.length} title${items.length === 1 ? '' : 's'}`;
+  $('#anime-pagination').hidden = totalPages === 1;
+  $('#anime-page-info').textContent = `Page ${animePage} of ${totalPages}`;
+  $('#anime-page-numbers').innerHTML = Array.from({length:totalPages}, (_, i) => {
+    const page = i + 1;
+    return `<button type="button" data-anime-page="${page}" aria-label="Go to anime page ${page}" ${page === animePage ? 'aria-current="page"' : ''}>${page}</button>`;
+  }).join('');
+  $('#anime-prev').disabled = animePage === 1;
+  $('#anime-next').disabled = animePage === totalPages;
+}
+
+function changeAnimePage(direction) {
+  const next = animePage + direction;
+  if (next < 1 || next > Math.ceil(animeResults.length / ANIME_PAGE_SIZE)) return;
+  animePage = next;
+  renderAnime(animeResults);
+  $('#anime-heading').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function uniqueAnime(items) {
@@ -135,7 +164,9 @@ function localAnime(search = '') {
   const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
   const extra = [...data.titles.filter(item => item.type === 'anime'), ...data.animeCache]
     .filter(item => words.every(word => `${item.name} ${item.genre || ''} ${item.description || ''} ${item.year || ''}`.toLocaleLowerCase().includes(word)));
-  return uniqueAnime([...searchAnvilCatalog(search), ...extra, ...searchOfflineAnime(search)]);
+  const custom = extra.filter(item => item.id.startsWith('custom:'));
+  const cached = extra.filter(item => !item.id.startsWith('custom:'));
+  return uniqueAnime([...searchAnvilCatalog(search), ...custom, ...searchOfflineAnime(search), ...cached]);
 }
 
 const animeQuery = `query ($search: String) {
@@ -150,7 +181,7 @@ async function loadAnime(search = '') {
   const saved = localAnime(search);
   $('#anime-heading').textContent = search ? `Results for “${search}”` : 'The anime collection';
   $('#anime-status').classList.remove('error');
-  renderAnime(saved);
+  renderAnime(saved, {resetPage:true});
   if (data.lowDataMode) {
     $('#anime-status').textContent = 'Low-Data Mode is on. Showing saved anime only; online discovery is paused.';
     return;
@@ -176,6 +207,7 @@ async function loadAnime(search = '') {
         episodes:row.episodes ? Math.min(300, Math.max(1, row.episodes)) : 0, format:row.format || 'Anime', score:row.averageScore || 0,
         cover:safeUrl(row.coverImage?.large || '') || '',
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
+      if (offline?.episodeTitles?.length) Object.assign(item, offline);
       // Preserve the original Anvil IDs and JJK episode names.
       if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) catalog.set(item.id, item);
       return item;
@@ -203,8 +235,12 @@ function openDetails(id) {
     detailReturnPage = lastRenderedPage === 'home' ? 'home' : 'videos';
     detailReturnTab = activeVideoTab;
   }
-  const cover = data.lowDataMode ? '' : safeUrl(selected.cover || '', {allowEmpty:true});
+  const cover = data.lowDataMode ? '' : trustedCover(selected.cover);
   const hasEpisodeList = Number.isInteger(selected.episodes) && selected.episodes > 0;
+  const officialUrl = safeUrl(selected.officialUrl || '', {allowEmpty:true});
+  const sourceUrl = safeUrl(selected.sourceUrl || '', {allowEmpty:true});
+  const sourceLinks = [officialUrl ? `<a href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer">Official series website ↗</a>` : '',
+    sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Poster & episode credits: TVmaze ↗</a>` : ''].filter(Boolean).join('');
   $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : ''}</div>
     <div class="detail-content"><p class="kicker">${escapeHtml(selected.type.toUpperCase())} / CRYALUNE</p>
       <h1>${escapeHtml(selected.name)}</h1><p>${escapeHtml(selected.description || 'A title in your personal collection.')}</p>
@@ -213,7 +249,8 @@ function openDetails(id) {
       <span class="chip">${hasEpisodeList ? `${selected.episodes} episode${selected.episodes === 1 ? '' : 's'}` : 'Episode list not yet imported'}</span>
       ${selected.score ? `<span class="chip">★ ${(selected.score / 10).toFixed(1)} / 10</span>` : ''}
       <div class="button-row">${hasEpisodeList ? '<button type="button" class="button primary" data-action="play" data-episode="1">Start watching</button>' : ''}
-      <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my favorites' : '♡ Add to my favorites'}</button></div></div>`;
+      <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my favorites' : '♡ Add to my favorites'}</button></div>
+      ${sourceLinks ? `<div class="catalog-sources">${sourceLinks}</div>` : ''}</div>`;
   renderEpisodes();
   location.hash = '#detail'; pageRoute();
 }
@@ -461,7 +498,29 @@ $('#home-search-form').addEventListener('submit', event => {
   $('#anime-query').value = query;
   loadAnime(query);
 });
-$('#anime-search-form').addEventListener('submit', event => { event.preventDefault(); loadAnime($('#anime-query').value.trim()); });
+let animeSearchTimer;
+$('#anime-query').addEventListener('input', () => {
+  clearTimeout(animeSearchTimer);
+  ++searchSerial; // Invalidate older online requests immediately when the query changes.
+  const query = $('#anime-query').value.trim();
+  $('#anime-heading').textContent = query ? `Results for “${query}”` : 'The anime collection';
+  renderAnime(localAnime(query), {resetPage:true});
+  $('#anime-status').textContent = query ? 'Filtering your saved collection…' : 'Showing your saved collection…';
+  animeSearchTimer = setTimeout(() => loadAnime(query), 600);
+});
+$('#anime-search-form').addEventListener('submit', event => {
+  event.preventDefault(); clearTimeout(animeSearchTimer);
+  loadAnime($('#anime-query').value.trim());
+});
+$('#anime-prev').addEventListener('click', () => changeAnimePage(-1));
+$('#anime-next').addEventListener('click', () => changeAnimePage(1));
+$('#anime-page-numbers').addEventListener('click', event => {
+  const button = event.target.closest('[data-anime-page]');
+  if (!button) return;
+  animePage = Number(button.dataset.animePage);
+  renderAnime(animeResults);
+  $('#anime-heading').scrollIntoView({behavior:'smooth',block:'start'});
+});
 $('#player-close').addEventListener('click', closePlayer);
 $('#cinema-mode').addEventListener('click', () => { data.cinemaMode = !data.cinemaMode; save(); applyPreferences(); });
 $('#player-dialog').addEventListener('close', closePlayer);
@@ -513,7 +572,6 @@ $('#title-form').addEventListener('submit', event => {
 });
 
 $('#accent-input').addEventListener('input', event => { data.accent = event.target.value; applyAccent(); save(); });
-$('#poster-size').addEventListener('change', event => { data.posterSize = event.target.value; save(); applyPreferences(); });
 $('#low-data-mode').addEventListener('change', event => {
   data.lowDataMode = event.target.checked; save(); applyPreferences();
   renderHomeProgress(); renderLocalTitles(); renderFavorites();

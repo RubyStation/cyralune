@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
 import {OFFLINE_ANIME, searchOfflineAnime} from '../nyx-static/offline-anime.js';
 import {ANVIL_CATALOG} from '../nyx-static/anvil-catalog.js';
 
@@ -10,8 +11,20 @@ test('offline discovery has 99 unique entries alongside the seven original Anvil
   assert.equal(new Set(OFFLINE_ANIME.map(item => item.id)).size, 99);
   for (const item of OFFLINE_ANIME) {
     assert.equal(item.type, 'anime');
-    assert.equal(item.episodes, 0);
     assert.equal('sources' in item, false);
+  }
+});
+
+test('at least 40 anime have credited posters and named episodes available offline', () => {
+  const enriched = OFFLINE_ANIME.filter(item => item.cover && item.episodeTitles.length);
+  assert.ok(enriched.length >= 40, `Expected 40 fully sourced entries, got ${enriched.length}`);
+  for (const item of enriched) {
+    assert.match(item.cover, /^\.\/assets\/posters\/[a-z0-9-]+\.jpg$/);
+    assert.ok(existsSync(new URL(`../nyx-static/${item.cover.slice(2)}`, import.meta.url)));
+    assert.ok(item.sourceUrl.startsWith('https://www.tvmaze.com/shows/'));
+    assert.equal(item.episodes, item.episodeTitles.length);
+    assert.ok(item.episodes >= 1 && item.episodes <= 300);
+    assert.ok(item.episodeTitles.every(title => typeof title === 'string' && title.trim().length > 0));
   }
 });
 

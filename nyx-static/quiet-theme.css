@@ -163,20 +163,22 @@ body:has(.view[data-view="home"]:not([hidden])) {
   color:#f2f2f3;
   box-shadow:0 2px 9px #0005;
 }
-.library-layout-controls {display:flex;justify-content:flex-end;align-items:center;gap:12px;margin:-8px 0 24px}
-.library-layout-controls>label {font-size:12px;font-weight:650;letter-spacing:.035em;color:#b9bec7}
-.poster-select {position:relative;display:inline-flex;align-items:center}
-.poster-select:after {content:"";pointer-events:none;position:absolute;right:16px;top:15px;width:7px;height:7px;border-right:1.5px solid #c2c6ce;border-bottom:1.5px solid #c2c6ce;transform:rotate(45deg)}
-.poster-select select {appearance:none;-webkit-appearance:none;min-width:142px;min-height:42px;padding:9px 37px 9px 16px;border-radius:12px;border:1px solid #ffffff38;background:linear-gradient(145deg,#282c34,#181b21);box-shadow:inset 0 1px #ffffff14,0 5px 17px #0003;color:#eceef0;font-size:13px;font-weight:600;cursor:pointer}
-.poster-select select:hover {border-color:#969ca7;background:linear-gradient(145deg,#30353e,#1c2027)}
-.poster-select select option {background:#1b1f26;color:#eceef0}
-#pane-anime>.add-title {margin:0 0 22px}
 .setting-toggle {display:flex;align-items:center;gap:12px;color:#e0e2e6}
 .setting-toggle input {width:18px;height:18px;accent-color:#abb0ba}
-html[data-poster-size="small"] {--poster-card-width:140px}
-html[data-poster-size="medium"] {--poster-card-width:190px}
-html[data-poster-size="large"] {--poster-card-width:265px}
-.card-grid {grid-template-columns:repeat(auto-fill,minmax(0,var(--poster-card-width,190px)));justify-content:start}
+.card-grid {grid-template-columns:repeat(auto-fill,minmax(170px,1fr));justify-content:start}
+#anime-grid {grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.anime-pagination {display:flex;align-items:center;justify-content:center;gap:17px;flex-wrap:wrap;margin:28px 0 12px}
+.anime-pagination[hidden] {display:none}
+.anime-pagination .button {min-width:112px}
+.anime-pagination .button:disabled {opacity:.4;cursor:not-allowed}
+#anime-page-info {color:#c4c7ce;font-size:13px;font-variant-numeric:tabular-nums}
+.anime-page-numbers {display:flex;flex-wrap:wrap;gap:5px}
+.anime-page-numbers button {width:34px;height:34px;border-radius:9px;background:#ffffff0d;border:1px solid #ffffff22;color:#c1c4cb;cursor:pointer}
+.anime-page-numbers button[aria-current="page"] {background:#c3c6cd;border-color:#c3c6cd;color:#13161b;font-weight:700}
+.anime-page-numbers button:hover:not([aria-current="page"]) {background:#ffffff20}
+.catalog-attribution {font-size:11px;line-height:1.6;color:#8c909a;margin:20px 0 8px}
+.catalog-attribution a,.catalog-sources a {color:#cbd0d9;text-underline-offset:3px}
+.catalog-sources {display:flex;gap:15px;flex-wrap:wrap;margin-top:16px;font-size:12px}
 .episode-entry {display:flex;flex-direction:column;gap:7px;min-width:0}
 .episode-entry .episode-button {flex:1;width:100%}
 .episode-check {background:#161a20;color:#b8bcc5;border:1px solid #ffffff29;border-radius:10px;padding:7px 10px;font-size:12px;min-height:36px;text-align:center}
@@ -197,6 +199,12 @@ html.low-data-mode .poster img,html.low-data-mode .detail-poster img {display:no
 html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   background:radial-gradient(ellipse at 50% 35%,#2c313b 0%,#171c24 45%,#0d1015 100%);
 }
+@media(max-width:1250px) {
+  #anime-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:960px) {
+  #anime-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 @media(max-width:700px) {
   .rail {background:#101319f4;border-top-color:#ffffff24}
   .rail-nav a {min-height:55px}
@@ -207,10 +215,9 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .home-subtitle {font-size:9px;margin-bottom:26px}
   .video-tabs {width:100%;gap:3px;padding:5px}
   .video-tab {font-size:12px;padding:9px 13px}
-  .library-layout-controls {justify-content:flex-start;margin:0 0 24px}
-  html[data-poster-size="small"] .card-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
-  html[data-poster-size="medium"] .card-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
-  html[data-poster-size="large"] .card-grid {grid-template-columns:minmax(0,1fr)}
+  .card-grid,#anime-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .anime-pagination {gap:9px}
+  .anime-pagination .button {min-width:90px;padding:10px}
   .player-top-actions {gap:6px}
   #cinema-mode {font-size:11px;padding:6px 8px;min-height:36px}
   .player-dialog.cinema-mode .screen {height:calc(95dvh - 100px)}

@@ -1,0 +1,92 @@
+// Generate a small, reviewable offline catalog from TVmaze's published API.
+// https://www.tvmaze.com/api (CC BY-SA; attribution links are shown in the UI)
+// This is metadata only. No video files or streaming links are collected.
+import {writeFile} from 'node:fs/promises';
+
+const titles = [
+  'Naruto', 'Naruto: Shippuden', 'Boruto: Naruto Next Generations',
+  'Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super',
+  'Bleach', 'Bleach: Thousand-Year Blood War', 'Attack on Titan',
+  'Demon Slayer: Kimetsu no Yaiba', 'My Hero Academia',
+  'Fullmetal Alchemist: Brotherhood', 'Hunter x Hunter', 'Death Note',
+  'Cowboy Bebop', 'Samurai Champloo', 'Code Geass', 'Steins;Gate',
+  'Mob Psycho 100', 'One-Punch Man', 'Chainsaw Man', 'Spy x Family',
+  'Frieren: Beyond Journey’s End', 'Solo Leveling', 'Dandadan',
+  'Blue Lock', 'Haikyu!!', 'Kuroko’s Basketball', 'Slam Dunk',
+  'Vinland Saga', 'Tokyo Ghoul', 'Tokyo Revengers', 'Black Clover',
+  'Fairy Tail', 'The Seven Deadly Sins', 'JoJo’s Bizarre Adventure',
+  'Gintama', 'Re:Zero', 'Sword Art Online', 'KonoSuba',
+  'Mushoku Tensei: Jobless Reincarnation', 'Overlord',
+  'That Time I Got Reincarnated as a Slime', 'Dr. Stone',
+  'The Promised Neverland', 'Food Wars!', 'Your Lie in April',
+  'Clannad', 'Toradora!', 'Horimiya', 'Kaguya-sama: Love Is War',
+  'Fruits Basket', 'Violet Evergarden', 'Neon Genesis Evangelion',
+  'Psycho-Pass', 'Made in Abyss', 'Kill la Kill', 'Gurren Lagann',
+  'Erased', 'Parasyte: The Maxim', 'Hellsing Ultimate', 'Trigun',
+  'Initial D', 'Berserk', 'Hajime no Ippo', 'Bungo Stray Dogs',
+  'Assassination Classroom', 'Noragami', 'The Rising of the Shield Hero',
+  'Blue Exorcist', 'Soul Eater', 'Fire Force', 'Black Butler',
+  'Death Parade', 'Durarara!!', 'Beastars', 'Nana', 'Bocchi the Rock!',
+  'Oshi no Ko', 'The Apothecary Diaries', 'Delicious in Dungeon',
+  'My Dress-Up Darling', 'Komi Can’t Communicate',
+  'Little Witch Academia', 'Sailor Moon', 'Cardcaptor Sakura',
+  'Inuyasha', 'Yu Yu Hakusho', 'Rurouni Kenshin'
+];
+
+const aliases = new Map([
+  ['Demon Slayer: Kimetsu no Yaiba', 'Demon Slayer'],
+  ['Haikyu!!', 'Haikyuu!!'],
+  ['JoJo’s Bizarre Adventure', 'JoJo\'s Bizarre Adventure'],
+  ['Frieren: Beyond Journey’s End', "Frieren: Beyond Journey's End"],
+  ['Spy x Family', 'Spy×Family'],
+  ['Kaguya-sama: Love Is War', 'Kaguya-sama: Love is War'],
+  ['The Apothecary Diaries', 'The Apothecary Diaries'],
+  ['KonoSuba', 'Kono Subarashii Sekai ni Shukufuku wo!']
+]);
+const normalized = name => name.toLowerCase().replace(/[×]/gu, 'x').replace(/[^a-z0-9]/gu, '');
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const results = [];
+const rejected = [];
+
+for (const title of titles) {
+  // The fuzzy query for these titles matches unrelated live-action or reality TV.
+  // Keep them title-only until an anime-specific source can be verified.
+  if (title === 'Food Wars!' || title === 'Yu Yu Hakusho') {
+    rejected.push(`${title} (ambiguous live-action match)`);
+    continue;
+  }
+  // TVmaze's public API has rate limits. One lookup every 550 ms is conservative.
+  await pause(550);
+  try {
+    const search = aliases.get(title) || title;
+    const response = await fetch(`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(search)}&embed=episodes`);
+    if (response.status === 429) { await pause(11000); rejected.push(`${title} (rate limited)`); continue; }
+    if (!response.ok) { rejected.push(`${title} (${response.status})`); continue; }
+    const show = await response.json();
+    if (!show?.image?.medium || !show?.url || !Array.isArray(show?._embedded?.episodes)) {
+      rejected.push(`${title} (no image or episode guide)`); continue;
+    }
+    if (normalized(title) !== normalized(show.name) && normalized(search) !== normalized(show.name)) {
+      rejected.push(`${title} (ambiguous match: ${show.name})`); continue;
+    }
+    const episodes = show._embedded.episodes.filter(ep => ep.type === 'regular' && ep.name && !/^(tba|unknown|untitled)$/i.test(ep.name.trim())).slice(0, 300);
+    if (!episodes.length) { rejected.push(`${title} (no named episodes)`); continue; }
+    results.push({
+      name: title,
+      cover: show.image.medium,
+      sourceUrl: show.url,
+      officialUrl: show.officialSite || '',
+      year: Number(show.premiered?.slice(0, 4)) || 0,
+      genre: show.genres?.slice(0, 3).join(' · ') || '',
+      episodeTitles: episodes.map(ep => ep.name.trim()),
+      // Retain the page attribution and the original API title for auditability.
+      sourceTitle: show.name
+    });
+  } catch (error) { rejected.push(`${title} (${error.message})`); }
+}
+
+const banner = `// Published show artwork and episode names from the official TVmaze API.\n// TVmaze API data: CC BY-SA 4.0 (https://www.tvmaze.com/api).\n// Each show includes its source URL for attribution, plus an official website if listed.\n// No streaming content is included. Generated by scripts/build-anime-gallery.mjs.\n`;
+await writeFile(new URL('../nyx-static/anime-gallery.js', import.meta.url),
+  `${banner}export const ANIME_GALLERY = Object.freeze(${JSON.stringify(results, null, 2)});\n`);
+console.log(JSON.stringify({count: results.length, withOfficialSites: results.filter(item => item.officialUrl).length,
+  accepted: results.map(item => `${item.name} (${item.episodeTitles.length})`), rejected}, null, 2));

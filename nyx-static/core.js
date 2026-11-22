@@ -38,7 +38,7 @@ export function sortedSources(sources) {
 
 export function defaultData() {
   return {version: 1, lastPage: 'home', accent: '#abb0ba', favorites: [], progress: {}, sources: {}, websites: [], titles: [],
-    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false, posterSize: 'medium'};
+    animeCache: [], episodeMarks: {}, cinemaMode: false, lowDataMode: false};
 }
 
 export function restoreData(raw) {
@@ -53,7 +53,6 @@ export function restoreData(raw) {
     accent: color,
     cinemaMode: raw.cinemaMode === true,
     lowDataMode: raw.lowDataMode === true,
-    posterSize: ['small', 'medium', 'large'].includes(raw.posterSize) ? raw.posterSize : 'medium',
     episodeMarks: Object.fromEntries(Object.entries(raw.episodeMarks && typeof raw.episodeMarks === 'object' && !Array.isArray(raw.episodeMarks) ? raw.episodeMarks : {})
       .filter(([key, mark]) => key.length <= 150 && ['watched', 'skipped'].includes(mark)).slice(0, 10000)),
     favorites: Array.isArray(raw.favorites) ? raw.favorites.filter(v => typeof v === 'string').slice(0, 3000) : [],

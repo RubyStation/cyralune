@@ -1,6 +1,7 @@
-// An additional offline discovery index. These are title-only entries, NOT
-// recovered Anvil records, episodes, artwork, or playable video sources.
-// Keeping the original seven Anvil records separate preserves their IDs.
+// The original discovery index is retained (including user favorites by ID).
+// Verified TVmaze artwork and episode titles enrich matching titles; all others
+// remain searchable title-only entries. No streaming sources are added.
+import {ANIME_GALLERY} from './anime-gallery.js';
 const DISCOVERY_TITLES = [
   'Naruto', 'Naruto: Shippuden', 'Boruto: Naruto Next Generations',
   'Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super',
@@ -37,12 +38,26 @@ const DISCOVERY_TITLES = [
 const slug = name => name.toLocaleLowerCase().normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-export const OFFLINE_ANIME = Object.freeze(DISCOVERY_TITLES.map(name => Object.freeze({
-  id: `offline:${slug(name)}`, name, type: 'anime', format: 'Offline discovery',
-  episodes: 0, description: 'Title-only discovery entry. Episode details and video sources are not included.'
-})));
+const galleryByName = new Map(ANIME_GALLERY.map(item => [item.name.toLocaleLowerCase(), item]));
+
+export const OFFLINE_ANIME = Object.freeze(DISCOVERY_TITLES.map(name => {
+  const credited = galleryByName.get(name.toLocaleLowerCase());
+  return Object.freeze({
+    id: `offline:${slug(name)}`, name, type: 'anime',
+    format: credited ? 'TV Anime · episode guide' : 'Offline discovery',
+    episodes: credited?.episodeTitles.length || 0,
+    episodeTitles: credited?.episodeTitles || [],
+    // Serve TVmaze-approved cached artwork from our own allowed Firebase domain.
+    cover: credited ? `./assets/posters/${slug(name)}.jpg` : '',
+    genre: credited?.genre || '', year: credited?.year || 0,
+    sourceUrl: credited?.sourceUrl || '',
+    officialUrl: credited?.officialUrl || '',
+    description: credited ? `Episode names and poster sourced from TVmaze (${credited.sourceTitle}). Streaming sources are not included.`
+      : 'Title-only discovery entry. Episode details and video sources are not included.'
+  });
+}));
 
 export function searchOfflineAnime(search = '') {
   const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
-  return OFFLINE_ANIME.filter(item => words.every(word => item.name.toLocaleLowerCase().includes(word)));
+  return OFFLINE_ANIME.filter(item => words.every(word => `${item.name} ${item.genre} ${item.year}`.toLocaleLowerCase().includes(word)));
 }
