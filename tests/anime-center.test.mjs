@@ -18,6 +18,7 @@ test('featured Watch opens the existing episode player and poster cards open det
   assert.match(app,/if \(action === 'feature-watch'\)/);
   assert.match(app,/if \(selected\?\.episodes > 0\) openPlayer\(1\)/);
   assert.match(app,/class="anime-poster-card" data-action="detail"/);
+  assert.doesNotMatch(app,/anime-episode-badge/);
 });
 
 test('featured and tile images crop without stretching and the poster grid adapts to mobile', () => {
