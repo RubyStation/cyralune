@@ -79,3 +79,16 @@ export function restoreData(raw) {
 }
 
 export function progressKey(titleId, episode) { return `${titleId}:e${episode}`; }
+
+// Keep player navigation within the episode list, without wrapping at either end.
+export function neighboringEpisode(episode, direction, count) {
+  if (!Number.isInteger(episode) || ![-1, 1].includes(direction) ||
+      !Number.isInteger(count) || count < 1) return null;
+  const next = episode + direction;
+  return next >= 1 && next <= count ? next : null;
+}
+
+export function nextPlayableSource(index, count) {
+  return Number.isInteger(index) && Number.isInteger(count) && index >= 0 && index + 1 < count
+    ? index + 1 : null;
+}

@@ -1,4 +1,4 @@
-import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey} from './core.js';
+import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource} from './core.js';
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 
@@ -323,9 +323,18 @@ function currentKey() { return selected ? progressKey(selected.id, selectedEpiso
 function stopPlayers() {
   currentSource = null;
   if (hls) { hls.destroy(); hls = null; }
+  video.onloadedmetadata = null;
   video.pause(); video.removeAttribute('src'); video.load(); video.replaceChildren();
   embed.src = 'about:blank'; embed.hidden = true; video.hidden = true;
   $('#player-empty').hidden = false;
+  updateSubtitlePicker(false);
+}
+
+function clearLocalAttachments() {
+  if (localVideoUrl) URL.revokeObjectURL(localVideoUrl);
+  if (localCaptionUrl) URL.revokeObjectURL(localCaptionUrl);
+  localVideoUrl = ''; localCaptionUrl = '';
+  $('#local-video').value = ''; $('#local-captions').value = '';
 }
 
 function saveCurrentPosition() {
@@ -337,38 +346,63 @@ function saveCurrentPosition() {
 function closePlayer() {
   saveCurrentPosition();
   stopPlayers();
-  if (localVideoUrl) URL.revokeObjectURL(localVideoUrl);
-  if (localCaptionUrl) URL.revokeObjectURL(localCaptionUrl);
-  localVideoUrl = ''; localCaptionUrl = '';
-  $('#local-video').value = ''; $('#local-captions').value = '';
+  clearLocalAttachments();
+  activeSources = []; activeIndex = -1;
   if ($('#player-dialog').open) $('#player-dialog').close();
 }
 
 function openPlayer(episode) {
-  if (!selected) return;
+  if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
+  if ($('#player-dialog').open) {
+    saveCurrentPosition();
+    stopPlayers();
+    clearLocalAttachments(); // A device file belongs only to the episode where it was chosen.
+  }
   selectedEpisode = episode;
   lastSavedSecond = -1;
   const episodeTitle = selected.episodeTitles?.[episode - 1];
   $('#player-title').textContent = `${selected.name} · Episode ${episode}${episodeTitle ? `: ${episodeTitle}` : ''}`;
+  updateEpisodeNavigation();
   activeSources = availableSources(selected, selectedEpisode);
   buildPlayerSourcePicker();
-  $('#player-dialog').showModal();
+  if (!$('#player-dialog').open) $('#player-dialog').showModal();
   if (activeSources.length) loadSource(0);
-  else { stopPlayers(); $('#player-status').textContent = 'No source added. Use a local MP4/WebM file or Manage sources.'; }
+  else { stopPlayers(); $('#player-status').textContent = 'No playable source for this episode yet. Choose your video file or add an authorized source.'; }
+}
+
+function updateEpisodeNavigation() {
+  const count = selected?.episodes || 0;
+  $('#player-prev-episode').disabled = neighboringEpisode(selectedEpisode, -1, count) === null;
+  $('#player-next-episode').disabled = neighboringEpisode(selectedEpisode, 1, count) === null;
+  $('#player-episode-count').textContent = count ? `Episode ${selectedEpisode} of ${count}` : 'No episodes';
+}
+
+function updateSourceNavigation() {
+  $('#try-next-source').disabled = nextPlayableSource(activeIndex, activeSources.length) === null;
 }
 
 function buildPlayerSourcePicker() {
   $('#player-source').innerHTML = activeSources.length ? activeSources.map((source, index) =>
     `<option value="${index}">${escapeHtml(source.name)} (${escapeHtml(source.type.toUpperCase())})</option>`).join('') : '<option>No sources available</option>';
   $('#player-source').disabled = !activeSources.length;
+  updateSourceNavigation();
 }
 
 function attachCaptions(url) {
   video.replaceChildren();
+  updateSubtitlePicker(Boolean(url));
   if (!url) return;
   const track = document.createElement('track');
   track.kind = 'subtitles'; track.label = 'English'; track.srclang = 'en'; track.src = url; track.default = true;
   video.append(track);
+  track.track.mode = 'showing';
+}
+
+function updateSubtitlePicker(available) {
+  const picker = $('#player-subtitles');
+  picker.innerHTML = available ? '<option value="on">English</option><option value="off">Off</option>' : '<option value="off">Off</option>';
+  picker.value = available ? 'on' : 'off';
+  picker.disabled = !available;
 }
 
 function getHlsLibrary() {
@@ -387,22 +421,28 @@ function loadSource(index) {
   if (!Number.isInteger(index) || index < 0 || index >= activeSources.length) return;
   saveCurrentPosition();
   stopPlayers(); activeIndex = index; currentSource = activeSources[index];
+  updateSourceNavigation();
   $('#player-empty').hidden = true; $('#player-source').value = String(index);
   const source = currentSource;
   $('#player-status').classList.remove('error');
   $('#player-status').textContent = `Loading ${source.name}…`;
   if (source.type === 'embed') {
     video.hidden = true; embed.hidden = false; embed.src = source.url;
-    $('#player-status').textContent = 'Embedded player controls are provided by the source. If it fails, select a different source.';
+    $('#player-status').textContent = 'This provider controls playback and subtitles. If it fails, use Try next source.';
     return;
   }
   video.hidden = false; embed.hidden = true;
   attachCaptions(localCaptionUrl || source.captions);
-  const previous = data.progress[currentKey()]?.time || 0;
+  const saved = data.progress[currentKey()];
+  const previous = saved && !saved.completed ? Number(saved.time) || 0 : 0;
   video.onloadedmetadata = () => {
     if (currentSource !== source) return;
-    if (previous > 0 && Number.isFinite(video.duration) && previous < video.duration - 12) video.currentTime = previous;
-    $('#player-status').textContent = 'Ready to play. Use the video controls for audio, subtitles, and fullscreen.';
+    const resume = previous > 0 && (Number.isFinite(video.duration) ? previous < video.duration - 12 : true);
+    if (resume) video.currentTime = previous;
+    const minute = Math.floor(previous / 60), second = Math.floor(previous % 60);
+    $('#player-status').textContent = resume
+      ? `Resuming at ${minute}:${String(second).padStart(2,'0')}. Press Play to continue.`
+      : 'Ready to play. Your place is saved automatically.';
   };
   if (source.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
     getHlsLibrary().then(Hls => {
@@ -417,8 +457,8 @@ function loadSource(index) {
 
 function sourceFailed(message) {
   if (!currentSource) return;
-  if (activeIndex + 1 < activeSources.length) {
-    const next = activeIndex + 1;
+  const next = nextPlayableSource(activeIndex, activeSources.length);
+  if (next !== null) {
     loadSource(next);
     $('#player-status').textContent = `${message}; trying ${activeSources[next].name}…`;
   } else {
@@ -535,6 +575,32 @@ $('#anime-page-numbers').addEventListener('click', event => {
 $('#player-close').addEventListener('click', closePlayer);
 $('#cinema-mode').addEventListener('click', () => { data.cinemaMode = !data.cinemaMode; save(); applyPreferences(); });
 $('#player-dialog').addEventListener('close', closePlayer);
+$('#player-prev-episode').addEventListener('click', () => {
+  const episode = neighboringEpisode(selectedEpisode, -1, selected?.episodes || 0);
+  if (episode !== null) openPlayer(episode);
+});
+$('#player-next-episode').addEventListener('click', () => {
+  const episode = neighboringEpisode(selectedEpisode, 1, selected?.episodes || 0);
+  if (episode !== null) openPlayer(episode);
+});
+$('#try-next-source').addEventListener('click', () => {
+  const next = nextPlayableSource(activeIndex, activeSources.length);
+  if (next !== null) loadSource(next);
+});
+$('#player-subtitles').addEventListener('change', event => {
+  for (const track of video.textTracks) track.mode = event.target.value === 'on' ? 'showing' : 'disabled';
+});
+$('#player-fullscreen').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await $('#player-screen').requestFullscreen();
+  } catch { $('#player-status').textContent = 'Fullscreen is unavailable in this browser or source.'; }
+});
+document.addEventListener('fullscreenchange', () => {
+  const fullscreen = document.fullscreenElement === $('#player-screen');
+  $('#player-fullscreen').textContent = fullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+  $('#player-fullscreen').setAttribute('aria-pressed', String(fullscreen));
+});
 $('#player-source').addEventListener('change', event => loadSource(Number(event.target.value)));
 $('#manage-source').addEventListener('click', openSourceEditor);
 

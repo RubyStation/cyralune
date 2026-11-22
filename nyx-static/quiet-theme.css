@@ -188,8 +188,16 @@ body:has(.view[data-view="home"]:not([hidden])) {
 .episode-entry.is-watched .episode-button {border-color:#7fae9460}
 .episode-entry.is-skipped .episode-button {opacity:.72}
 .player-top-actions {display:flex;align-items:center;gap:10px}
+.player-episode-nav {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 12px;background:#171b22;border:1px solid #ffffff1b;border-radius:12px}
+.player-episode-nav .button {min-width:160px;text-align:center}
+.player-episode-nav #player-episode-count {font-size:12px;letter-spacing:.03em;font-variant-numeric:tabular-nums;text-align:center}
+.player-episode-nav .button:disabled,.player-actions .button:disabled {opacity:.38;cursor:not-allowed}
+.player-actions>label:has(#player-subtitles) {flex:0 1 125px;min-width:105px}
+#try-next-source {min-height:44px}
+.screen:fullscreen {border-radius:0;background:#06080c}
+.screen:fullscreen video,.screen:fullscreen iframe {object-fit:contain}
 .player-dialog.cinema-mode {width: min(97vw,1800px);max-height:97dvh;background:#0a0d12;padding:14px;border-color:#ffffff40}
-.player-dialog.cinema-mode .screen {height:calc(97dvh - 103px);aspect-ratio:auto;background:#030406}
+.player-dialog.cinema-mode .screen {height:calc(97dvh - 175px);aspect-ratio:auto;background:#030406}
 .player-dialog.cinema-mode .player-actions,.player-dialog.cinema-mode #player-status {display:none}
 .player-dialog.cinema-mode .player-top .kicker {display:none}
 .player-dialog.cinema-mode .player-top h2 {font-size:16px}
@@ -220,7 +228,11 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .anime-pagination .button {min-width:90px;padding:10px}
   .player-top-actions {gap:6px}
   #cinema-mode {font-size:11px;padding:6px 8px;min-height:36px}
-  .player-dialog.cinema-mode .screen {height:calc(95dvh - 100px)}
+  #player-fullscreen {font-size:11px;padding:6px 8px;min-height:36px}
+  .player-episode-nav {gap:6px;padding:8px}
+  .player-episode-nav .button {min-width:0;flex:1;font-size:11px;padding:8px 5px}
+  .player-episode-nav #player-episode-count {font-size:10px;flex:0 1 85px}
+  .player-dialog.cinema-mode .screen {height:calc(95dvh - 164px)}
   body:has(.view[data-view="home"]:not([hidden])) {background-attachment:scroll;background-position:40% center}
 }
 @media(prefers-reduced-motion:reduce) {

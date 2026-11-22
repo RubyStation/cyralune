@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources,
-  defaultData, restoreData, progressKey} from '../nyx-static/core.js';
+  defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource} from '../nyx-static/core.js';
 
 if (!globalThis.crypto) globalThis.crypto = {randomUUID: () => 'test-uuid'};
 
@@ -34,6 +34,23 @@ test('source priority sorts ascending without changing input', () => {
   const sources = [{name:'Backup', priority:10}, {name:'Primary', priority:1}];
   assert.deepEqual(sortedSources(sources).map(x => x.name), ['Primary', 'Backup']);
   assert.equal(sources[0].name, 'Backup');
+});
+
+test('episode navigation stays within the selected title', () => {
+  assert.equal(neighboringEpisode(1, -1, 12), null);
+  assert.equal(neighboringEpisode(1, 1, 12), 2);
+  assert.equal(neighboringEpisode(11, 1, 12), 12);
+  assert.equal(neighboringEpisode(12, 1, 12), null);
+  assert.equal(neighboringEpisode(3, 0, 12), null);
+  assert.equal(neighboringEpisode(3, 1, 0), null);
+});
+
+test('source fallback advances only when another source exists', () => {
+  assert.equal(nextPlayableSource(0, 3), 1);
+  assert.equal(nextPlayableSource(1, 3), 2);
+  assert.equal(nextPlayableSource(2, 3), null);
+  assert.equal(nextPlayableSource(-1, 3), null);
+  assert.equal(nextPlayableSource(0, 0), null);
 });
 
 test('invalid backup fields are constrained when restored', () => {
