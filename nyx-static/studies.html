@@ -57,6 +57,7 @@
           <button type="button" class="video-tab" id="tab-movies" data-video-tab="movies" role="tab" aria-controls="pane-movies" aria-selected="false">Movies</button>
           <button type="button" class="video-tab" id="tab-shows" data-video-tab="shows" role="tab" aria-controls="pane-shows" aria-selected="false">TV Shows</button>
           <button type="button" class="video-tab" id="tab-favorites" data-video-tab="favorites" role="tab" aria-controls="pane-favorites" aria-selected="false">♡ My Favorites</button>
+          <button type="button" class="video-tab" id="tab-test" data-video-tab="test" role="tab" aria-controls="pane-test" aria-selected="false">Test</button>
         </div>
         <div id="pane-anime" data-video-pane="anime" role="tabpanel" aria-labelledby="tab-anime">
           <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, titles or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
@@ -80,6 +81,19 @@
         </div>
         <div id="pane-favorites" data-video-pane="favorites" role="tabpanel" aria-labelledby="tab-favorites" hidden>
           <div id="list-grid" class="card-grid"></div>
+        </div>
+        <!-- TEMPORARY CHROMEBOOK TEST: remove this pane, its tab, and its video asset after testing. -->
+        <div id="pane-test" data-video-pane="test" role="tabpanel" aria-labelledby="tab-test" hidden>
+          <div class="glass temporary-test-card">
+            <p class="kicker">TEMPORARY · CHROMEBOOK TEST</p>
+            <h2>Video Playback Test</h2>
+            <p class="muted">Play this 58-second 1080p sample to check video and sound on your Chromebook. It is separate from the anime episode library and will be removed after testing.</p>
+            <video id="temporary-test-video" controls playsinline preload="metadata" width="1920" height="1080" aria-label="Chromebook video playback test">
+              <source src="./assets/temporary-chromebook-test.mp4" type="video/mp4">
+              Your browser does not support MP4 playback.
+            </video>
+            <p class="temporary-test-link"><a class="button" href="./assets/temporary-chromebook-test.mp4" target="_blank" rel="noopener noreferrer">Open test video directly</a></p>
+          </div>
         </div>
       </section>
 

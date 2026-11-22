@@ -237,6 +237,21 @@ body:has(.view[data-view="home"]:not([hidden])) {
   color:#f2f2f3;
   box-shadow:0 2px 9px #0005;
 }
+/* TEMPORARY CHROMEBOOK TEST: remove with the Test tab after validation. */
+.temporary-test-card {max-width:960px;padding:clamp(18px,4vw,32px)}
+.temporary-test-card h2 {margin:9px 0 12px;font-size:clamp(24px,3.5vw,34px)}
+.temporary-test-card .muted {max-width:740px;line-height:1.6}
+#temporary-test-video {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:16/9;
+  margin-top:22px;
+  border:1px solid #ffffff24;
+  border-radius:12px;
+  background:#000;
+}
+.temporary-test-link {margin:18px 0 0}
 .setting-toggle {display:flex;align-items:center;gap:12px;color:#e0e2e6}
 .setting-toggle input {width:18px;height:18px;accent-color:#abb0ba}
 .card-grid {grid-template-columns:repeat(auto-fill,minmax(170px,1fr));justify-content:start}

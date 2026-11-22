@@ -130,15 +130,17 @@ function applyPreferences() {
 applyAccent();
 applyPreferences();
 
-const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites'};
+const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites', test: 'test'};
 const videoTabContent = {
   anime: ['Anime', 'Explore the original Anvil titles and a larger offline anime discovery index.'],
   movies: ['Movies', 'Your films and their available sources.'],
   shows: ['TV Shows', 'Keep every series and episode together.'],
-  favorites: ['My Favorites', 'Titles you have saved to return to later.']
+  favorites: ['My Favorites', 'Titles you have saved to return to later.'],
+  test: ['Playback Test', 'Temporary Chromebook video and audio compatibility test.']
 };
 function selectVideoTab(tab) {
   if (!Object.hasOwn(videoTabContent, tab)) tab = 'anime';
+  if (tab !== 'test') $('#temporary-test-video').pause();
   activeVideoTab = tab;
   const [heading, description] = videoTabContent[tab];
   $('#videos-heading').textContent = heading;
@@ -158,6 +160,7 @@ function pageRoute() {
   if (legacyTab) { activeVideoTab = legacyTab; page = 'videos'; }
   if (page === 'detail' && !selected) page = 'videos';
   if (!$(`[data-view="${page}"]`)) page = 'home';
+  if (page !== 'videos') $('#temporary-test-video').pause();
   $$('.view').forEach(element => element.hidden = element.dataset.view !== page);
   $$('#nav a').forEach(element => { const active = element.dataset.page === page; element.classList.toggle('active', active); if (active) element.setAttribute('aria-current', 'page'); else element.removeAttribute('aria-current'); });
   if (page !== 'detail') { data.lastPage = page; save(); }

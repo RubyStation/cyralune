@@ -71,6 +71,14 @@ For the 1080p sample: Videos → Anime → Jujutsu Kaisen → Episode 1 → Play
 The sample is 45 seconds only. To watch a full episode, choose a video file
 you already own and are permitted to use, or add an authorized source.
 
+### Temporary Chromebook playback section
+
+Open **Videos → Test** (or visit `studies.html#test`) to play a separate 58-second, 1080p sample and check
+audio/video compatibility, or use the **Open test video directly** link there.
+This test is not attached to any anime episode or watch-progress record.
+After testing, remove the marked temporary pane/tab, related JavaScript and
+CSS, and `nyx-static/assets/temporary-chromebook-test.mp4`.
+
 ### Connect actual episodes to the player
 
 The catalog provides **episode names, not episode video files**. A title shows
