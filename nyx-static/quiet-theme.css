@@ -91,18 +91,27 @@ footer span {color:#a9adb5}
   background:radial-gradient(ellipse at 80% 35%,#3c4555 0%,#222832 44%,#0e1219 100%);
 }
 .media-detail-banner {
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;
-  filter:saturate(.88) contrast(1.04);opacity:.98;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 36%;
+  /* Display the source pixels without color filtering or stretching linework. */
+  filter:none;opacity:1;
+}
+.media-detail-banner-backdrop {
+  position:absolute;inset:-24px;width:calc(100% + 48px);height:calc(100% + 48px);
+  object-fit:cover;object-position:center 35%;filter:blur(23px) brightness(.53) saturate(.8);
+  opacity:.75;pointer-events:none;
+}
+.media-detail-banner-backdrop[hidden] {display:none}
+.media-detail-hero:has(.media-detail-banner.is-portrait) {
+  background:#151b24;
 }
 .media-detail-banner.is-portrait {
-  /* A portrait is not a widescreen banner. Keep it sharp and at its natural
-     proportions instead of zooming and blurring low-resolution pixels. */
-  inset:0 0 0 auto;
-  width:min(45%,380px);
+  /* Preserve the poster's proportions. The separately blurred copy fills the
+     wide background without stretching faces or introducing jagged linework. */
+  inset:0 0 0 auto;width:min(52%,460px);
   object-fit:contain;
-  object-position:center right;
+  object-position:right center;
   filter:none;
-  opacity:.95;
+  opacity:1;
 }
 .media-detail-hero.art-unavailable {
   background:radial-gradient(ellipse at 70% 20%,#39414e 0%,#202633 52%,#101318 100%);
