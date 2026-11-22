@@ -5,9 +5,12 @@ import fastifyStatic from '@fastify/static';
 import fastifyFormbody from '@fastify/formbody';
 import { server as wisp, logging } from '@mercuryworkshop/wisp-js/server';
 import { scramjetPath } from '@mercuryworkshop/scramjet/path';
-import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
-import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
+import { controllerPath } from '@mercuryworkshop/scramjet-controller/path';
 import { createSessionCookie, isAllowedOrigin, isSessionValid, secureEquals, validateConfig } from './security.mjs';
+
+// libcurl-transport v2 ships a browser-ready ES module, rather than the v1
+// static-path export. Resolve its distribution directory from its entry point.
+const libcurlPath = fileURLToPath(new URL('.', import.meta.resolve('@mercuryworkshop/libcurl-transport')));
 
 const host = process.env.LISTEN_HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 8789);
@@ -126,8 +129,8 @@ app.post('/logout', async (request, reply) => {
 
 const publicPath = fileURLToPath(new URL('./public/', import.meta.url));
 await app.register(fastifyStatic, { root: publicPath, decorateReply: true });
-await app.register(fastifyStatic, { root: scramjetPath, prefix: '/scram/', decorateReply: false });
-await app.register(fastifyStatic, { root: baremuxPath, prefix: '/baremux/', decorateReply: false });
+await app.register(fastifyStatic, { root: scramjetPath, prefix: '/scramjet/', decorateReply: false });
+await app.register(fastifyStatic, { root: controllerPath, prefix: '/controller/', decorateReply: false });
 await app.register(fastifyStatic, { root: libcurlPath, prefix: '/libcurl/', decorateReply: false });
 
 app.setNotFoundHandler((_request, reply) => reply.code(404).send('Not found'));

@@ -2,7 +2,7 @@
 
 This is a **standalone, self-hosted Scramjet browser frontend with a Wisp WebSocket backend**. It is intentionally separate from the live Cryalune anime site. Nothing in this folder is deployed by Firebase Hosting or the existing Cloudflare demo Worker.
 
-The browser rewrites websites with [Mercury Workshop Scramjet](https://github.com/MercuryWorkshop/scramjet), uses [BareMux + libcurl-transport](https://github.com/MercuryWorkshop/Scramjet-App) for browser networking, and connects via [wisp-js](https://github.com/MercuryWorkshop/wisp-js) over `/wisp/`. The packages and their own open-source licenses are third-party dependencies; consult their license terms before public deployment, including the AGPL terms of Scramjet.
+The browser rewrites websites with [Mercury Workshop Scramjet v2](https://github.com/MercuryWorkshop/scramjet), uses its new controller plus [libcurl-transport v2](https://github.com/MercuryWorkshop/libcurl-transport) for networking, and connects via [wisp-js](https://github.com/MercuryWorkshop/wisp-js) over `/wisp/`. BareMux is part of the old Scramjet v1 integration and is deliberately **not** mixed with the v2 controller. The packages and their own open-source licenses are third-party dependencies; consult their license terms before public deployment, including the AGPL terms of Scramjet and libcurl-transport.
 
 ## Run locally for free
 
@@ -10,15 +10,15 @@ Requires **Node.js 20 or later**, npm, and network access for one-time dependenc
 
 ```sh
 cd browser-proxy
-npm ci --ignore-scripts --allow-remote=root
+npm ci --ignore-scripts
 npm start
 ```
 
-The Scramjet package used by the upstream sample is a version-pinned tarball from Mercury Workshop's GitHub releases. New npm versions block URL dependencies by default; `--allow-remote=root` opts in **only for URL dependencies explicitly listed in this project**, not globally. `--ignore-scripts` avoids executing dependency install scripts. The lockfile pins the tested versions.
+The Scramjet v2, controller, and libcurl v2 packages are pinned to exact npm versions. `--ignore-scripts` avoids executing dependency install scripts. The lockfile pins all transitive dependencies.
 
 Open `http://localhost:8789` in a modern desktop browser. The server binds only to `127.0.0.1` by default. Enter `https://example.com` and press Go. If the browser disallows service workers, the relay cannot operate. In particular, a restricted Chromebook may not permit these prerequisites.
 
-## Private remote deployment (not performed)
+## Private remote deployment
 
 An internet-accessible deployment requires an **always-running Node server** and **HTTPS** (via a reverse proxy). Set the following before starting it:
 
@@ -53,10 +53,10 @@ The [Mercury Workshop Wisp-on-Workers implementation](https://github.com/Mercury
 - Some web apps, logins, streaming sites, CAPTCHAs, live media, and features dependent on browser security isolation will not work even with Scramjet. A school or network administrator may also block the proxy itself; follow applicable network rules.
 - This version is a prototype pending end-to-end tests on a host with access to the third-party packages and on your Chromebook. Tests in `test/` check the local security and URL behavior; passing tests do not certify universal website compatibility.
 
-**Verification so far:** dependencies installed, the Node server launched, the Scramjet/BareMux/libcurl static files served HTTP 200, and Wisp WebSocket upgrades rejected anonymous sessions but accepted authenticated ones. Actual page rewriting in a graphical browser remains unverified because the available headless Chromium runtime cannot create its required local process sockets in this environment.
+**Verification so far:** the v2 dependencies installed, the Node server launched, the Scramjet v2/controller/libcurl assets served HTTP 200, and Wisp WebSocket upgrades rejected anonymous sessions but accepted authenticated ones. Actual page rewriting in a graphical browser remains unverified because the available headless Chromium runtime cannot create its required local process sockets in this environment. Confirm it in an ordinary browser before treating this as a working playback service.
 
 Run unit tests with `npm test` (the tests themselves use built-in Node tools).
 
 ## Next step for Cryalune
 
-Prove normal authorized public websites load in the isolated app on the intended Chromebook, then separately test *authorized* video files/streams. Only after that would we consider adding an optional link or player integration to Cryalune. Keep the existing backup branch and live deployment unchanged until playback is confirmed.
+Prove normal authorized public websites load in the isolated app on a network where the relay is allowed, then separately test *authorized* video files/streams. N7X's public static distribution uses a separate Wisp VPS, but directly copying its cross-origin open-relay design would remove our private authentication. In this version the browser UI and Wisp endpoint remain **same-origin** to preserve the signed-in session. CDN distribution and a separately hosted authenticated relay require a carefully designed credential flow and infrastructure, not just changing a JavaScript URL. Keep the existing backup branch and the live Cryalune deployment unchanged until playback is confirmed.

@@ -47,11 +47,17 @@ async function withServer(token, action) {
 
 test('serves the actual Scramjet and Wisp browser assets', { timeout: 12000 }, async () => {
   await withServer('', async (origin) => {
-    for (const path of ['/', '/sw.js', '/app.js', '/scram/scramjet.all.js', '/baremux/worker.js', '/libcurl/index.mjs']) {
+    for (const path of ['/', '/sw.js', '/app.js', '/scramjet/scramjet.js', '/scramjet/scramjet.wasm', '/controller/controller.api.js', '/controller/controller.sw.js', '/controller/controller.inject.js', '/libcurl/index.mjs']) {
       const response = await fetch(`${origin}${path}`);
       assert.equal(response.status, 200, `Asset ${path} did not load`);
       await response.body?.cancel();
     }
+    const browserHtml = await (await fetch(origin)).text();
+    assert.match(browserHtml, /\/scramjet\/scramjet\.js/);
+    assert.match(browserHtml, /\/controller\/controller\.api\.js/);
+    assert.doesNotMatch(browserHtml, /\/baremux\//);
+    const workerScript = await (await fetch(`${origin}/sw.js`)).text();
+    assert.match(workerScript, /\$scramjetController\.shouldRoute/);
     const notFound = await fetch(`${origin}/missing`);
     assert.equal(notFound.status, 404);
   });

@@ -1,4 +1,5 @@
 import { normalizeAddress } from './address.js';
+import LibcurlClient from '/libcurl/index.mjs';
 
 const $ = (id) => document.getElementById(id);
 const status = $('status');
@@ -66,25 +67,23 @@ function closeTab(tab) {
 }
 
 async function setup() {
-  if (!globalThis.$scramjetLoadController || !globalThis.BareMux) {
-    throw new Error('Scramjet files were not found. Install dependencies first.');
+  if (!globalThis.$scramjet || !globalThis.$scramjetController?.Controller) {
+    throw new Error('Scramjet v2 files were not found. Install dependencies first.');
   }
   if (!navigator.serviceWorker) throw new Error('This browser does not allow service workers. Use HTTPS or localhost.');
-  const { ScramjetController } = $scramjetLoadController();
-  controller = new ScramjetController({ files: {
-    wasm: '/scram/scramjet.wasm.wasm',
-    all: '/scram/scramjet.all.js',
-    sync: '/scram/scramjet.sync.js',
-  } });
-  await controller.init();
-  await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
   await navigator.serviceWorker.ready;
-  const transport = new BareMux.BareMuxConnection('/baremux/worker.js');
+  const activeWorker = navigator.serviceWorker.controller ?? registration.active;
+  if (!activeWorker) throw new Error('The browser could not activate the service worker.');
   const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
   const relayUrl = `${wsProtocol}://${location.host}/wisp/`;
-  await transport.setTransport('/libcurl/index.mjs', [{ websocket: relayUrl }]);
+  controller = new $scramjetController.Controller({
+    serviceworker: activeWorker,
+    transport: new LibcurlClient({ wisp: relayUrl }),
+  });
+  await controller.wait();
   ready = true;
-  setStatus('Ready · Wisp transport configured. Enter a public website above.');
+  setStatus('Ready · Scramjet v2 and Wisp transport configured. Enter a public website above.');
 }
 
 async function navigate(rawAddress) {
@@ -95,7 +94,7 @@ async function navigate(rawAddress) {
   try {
     if (!tab.proxy) {
       tab.proxy = controller.createFrame();
-      tab.frame = tab.proxy.frame;
+      tab.frame = tab.proxy.element;
       tab.frame.classList.add('proxy-frame');
       tab.frame.title = 'Proxied browser page';
       tab.frame.addEventListener('load', () => setStatus(`Page loaded · ${tab.label}`));
