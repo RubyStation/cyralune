@@ -87,14 +87,16 @@ function pageRoute() {
 window.addEventListener('hashchange', pageRoute);
 
 function trustedCover(raw) {
-  if (typeof raw === 'string' && /^\.\/assets\/posters\/[a-z0-9-]+\.jpg$/.test(raw)) return raw;
+  if (typeof raw === 'string' && /^\.\/assets\/posters(?:-hd)?\/[a-z0-9-]+\.(?:jpg|webp)$/.test(raw)) return raw;
   return safeUrl(raw || '', {allowEmpty:true}) || '';
 }
 
 function itemCard(item) {
   const name = escapeHtml(item.name), format = escapeHtml(item.format || (item.type === 'tv' ? 'TV series' : item.type === 'anime' ? 'Anime' : 'Movie'));
   const url = data.lowDataMode ? '' : trustedCover(item.cover);
-  const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}" alt="${name} poster" loading="lazy">` : ''}`;
+  const hd = data.lowDataMode ? '' : trustedCover(item.detailCover);
+  const responsive = url && hd ? ` srcset="${escapeHtml(url)} 1x, ${escapeHtml(hd)} 2x" data-fallback="${escapeHtml(url)}"` : '';
+  const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}"${responsive} alt="${name} poster" loading="lazy" decoding="async">` : ''}`;
   const progress = getLatestProgress(item.id);
   const subtitle = [item.year || '', format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
   return `<button type="button" class="media-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}">
@@ -102,9 +104,16 @@ function itemCard(item) {
     <div class="media-caption"><strong>${name}</strong><small>${escapeHtml(subtitle)}</small>${item.genre ? `<span class="genre-label">${escapeHtml(item.genre)}</span>` : ''}</div></button>`;
 }
 
-// Keep the title visible if its remote poster host is unavailable at school.
+// Prefer the local thumbnail if a HD image cannot load. Keep the text if both fail.
 document.addEventListener('error', event => {
-  if (event.target.matches?.('.poster img, .detail-poster img')) event.target.remove();
+  const img = event.target;
+  if (!img.matches?.('.poster img, .detail-poster img')) return;
+  if (img.dataset.fallback) {
+    const fallback = img.dataset.fallback;
+    img.removeAttribute('data-fallback');
+    img.removeAttribute('srcset');
+    img.src = fallback;
+  } else img.remove();
 }, true);
 
 function getLatestProgress(id) {
@@ -235,13 +244,15 @@ function openDetails(id) {
     detailReturnPage = lastRenderedPage === 'home' ? 'home' : 'videos';
     detailReturnTab = activeVideoTab;
   }
-  const cover = data.lowDataMode ? '' : trustedCover(selected.cover);
+  const smallCover = data.lowDataMode ? '' : trustedCover(selected.cover);
+  const cover = data.lowDataMode ? '' : trustedCover(selected.detailCover) || smallCover;
+  const posterFallback = cover !== smallCover && smallCover ? ` data-fallback="${escapeHtml(smallCover)}"` : '';
   const hasEpisodeList = Number.isInteger(selected.episodes) && selected.episodes > 0;
   const officialUrl = safeUrl(selected.officialUrl || '', {allowEmpty:true});
   const sourceUrl = safeUrl(selected.sourceUrl || '', {allowEmpty:true});
   const sourceLinks = [officialUrl ? `<a href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer">Official series website ↗</a>` : '',
     sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Poster & episode credits: TVmaze ↗</a>` : ''].filter(Boolean).join('');
-  $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : ''}</div>
+  $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}"${posterFallback} alt="${escapeHtml(selected.name)} poster" decoding="async">` : ''}</div>
     <div class="detail-content"><p class="kicker">${escapeHtml(selected.type.toUpperCase())} / CRYALUNE</p>
       <h1>${escapeHtml(selected.name)}</h1><p>${escapeHtml(selected.description || 'A title in your personal collection.')}</p>
       ${selected.genre ? `<span class="chip">${escapeHtml(selected.genre)}</span>` : ''}

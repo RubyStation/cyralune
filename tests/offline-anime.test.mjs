@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import {OFFLINE_ANIME, searchOfflineAnime} from '../nyx-static/offline-anime.js';
 import {ANVIL_CATALOG} from '../nyx-static/anvil-catalog.js';
 
@@ -21,6 +21,11 @@ test('at least 40 anime have credited posters and named episodes available offli
   for (const item of enriched) {
     assert.match(item.cover, /^\.\/assets\/posters\/[a-z0-9-]+\.jpg$/);
     assert.ok(existsSync(new URL(`../nyx-static/${item.cover.slice(2)}`, import.meta.url)));
+    assert.match(item.detailCover, /^\.\/assets\/posters-hd\/[a-z0-9-]+\.webp$/);
+    const hdPoster = readFileSync(new URL(`../nyx-static/${item.detailCover.slice(2)}`, import.meta.url));
+    assert.equal(hdPoster.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(hdPoster.toString('ascii', 8, 12), 'WEBP');
+    assert.ok(hdPoster.length > 1000);
     assert.ok(item.sourceUrl.startsWith('https://www.tvmaze.com/shows/'));
     assert.equal(item.episodes, item.episodeTitles.length);
     assert.ok(item.episodes >= 1 && item.episodes <= 300);

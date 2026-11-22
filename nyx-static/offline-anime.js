@@ -49,6 +49,9 @@ export const OFFLINE_ANIME = Object.freeze(DISCOVERY_TITLES.map(name => {
     episodeTitles: credited?.episodeTitles || [],
     // Serve TVmaze-approved cached artwork from our own allowed Firebase domain.
     cover: credited ? `./assets/posters/${slug(name)}.jpg` : '',
+    // High-density displays and the details page use the source's original art,
+    // optimized as local WebP rather than enlarging the small gallery thumbnail.
+    detailCover: credited ? `./assets/posters-hd/${slug(name)}.webp` : '',
     genre: credited?.genre || '', year: credited?.year || 0,
     sourceUrl: credited?.sourceUrl || '',
     officialUrl: credited?.officialUrl || '',
