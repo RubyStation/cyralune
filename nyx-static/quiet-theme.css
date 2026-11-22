@@ -1,0 +1,184 @@
+/* Calm charcoal theme and Moonrise home — loaded after the original styles. */
+:root {
+  --accent: #abb0ba;
+  --white: #eceef0;
+  --muted: #a7aab1;
+  --line: #ffffff1e;
+  --bg: #0d1015;
+  --panel: #171a20;
+  --panel2: #1c2027;
+  --shadow: 0 22px 55px #0005;
+}
+
+body {
+  color: var(--white);
+  background: radial-gradient(ellipse 68% 46% at 82% -12%,#363b4652,transparent),
+    radial-gradient(ellipse 54% 32% at 0% 90%,#22293440,transparent),var(--bg);
+}
+body:before {opacity:.055}
+
+.rail {
+  background: #101319ed;
+  border-right-color: #ffffff1b;
+  backdrop-filter: blur(20px);
+}
+.mark {
+  background: linear-gradient(150deg,#2a2d35,#14161c);
+  border: 1px solid #ffffff2c;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.mark img {width:46px;height:46px;display:block}
+.rail-nav a {color:#9b9fa8}
+.rail-nav a:hover,.rail-nav a.active {
+  background: #ffffff0e;
+  border-color: #ffffff2b;
+  color:#edeef0;
+}
+.rail-nav .nav-icon {height:24px;width:24px;display:block}
+.rail-nav .nav-icon svg {height:24px;width:24px;display:block}
+.brand strong {font-weight:600;letter-spacing:.23em;font-family:Georgia,serif}
+.brand span {color:#a5a8b0}
+.privacy {background:#12151ba6;color:#c1c3ca}
+.glass {background:linear-gradient(155deg,#23262ee0,#12151be8);border-color:#ffffff20;box-shadow:var(--shadow)}
+.icon-button {background:#ffffff0c;border-color:#ffffff25}
+.button {background:#ffffff0d;border-color:#ffffff2e;border-radius:11px;color:#e5e6e9}
+.button:hover {background:#ffffff19}
+.button.primary {background:#c3c6cd;color:#11141a;border-color:#d2d5da}
+.button.primary:hover {background:#d9dbe0}
+.kicker,.feature-glyph,.episode-button strong {color:#afb4be}
+.page-intro h1 {font-weight:690;letter-spacing:-.035em}
+.page-intro>p:not(.kicker) {color:#aeb1b8}
+.search-bar {border-color:#ffffff30;background:#191c22}
+.search-bar>span {color:#c2c5cc}
+.search-bar input::placeholder,input::placeholder {color:#81858e}
+.media-card {background:#181b21;border-color:#ffffff1d;box-shadow:0 12px 30px #0004}
+.media-card:hover,.feature-card:hover {border-color:#a5a9b158}
+.poster {background:radial-gradient(circle at 50% 20%,#3f434e,#20242c 48%,#101318 83%)}
+.poster-placeholder {color:#c7cad1}
+.genre-label {color:#aaaeb8}
+.chip {background:#12151bdb;border-color:#ffffff24;color:#d9dce0}
+.episode-button {background:#181b22;border-color:#ffffff23}
+.episode-button:hover {background:#252930;border-color:#aeb1bb80}
+.episode-name {color:#dadddf}
+.status {color:#b9bcc4}
+.detail-poster {background:#24262e;color:#c5c9d0}
+.detail-content>p {color:#b2b5bc}
+.settings-card p {color:#a9adb6}
+.editor-form input,.editor-form select,.editor-form textarea,.player-actions select {background:#11141a;border-color:#ffffff2b}
+dialog {background:#171a20;border-color:#ffffff35}
+dialog::backdrop {background:#050608df}
+footer {border-color:#ffffff1e;color:#898d95}
+footer span {color:#a9adb5}
+
+/* Keep the photographed basalt visible on Home and center the identity. */
+body:has(.view[data-view="home"]:not([hidden])) {
+  background: linear-gradient(180deg,#07090dc2 0%,#07090d57 33%,#07090d54 67%,#080a0ddd 100%),
+    url('./assets/cryalune-basalt-hero.jpg') center center / cover fixed no-repeat #0b0d11;
+}
+.main:has(.view[data-view="home"]:not([hidden])) .topbar {display:none}
+.home-landing {
+  display:grid;
+  place-items:center;
+  min-height:calc(100dvh - 52px);
+  padding:70px 18px;
+  text-align:center;
+  position:relative;
+}
+.home-landing:before {
+  content:"";
+  position:absolute;
+  width:min(740px,90%);
+  height:390px;
+  border-radius:50%;
+  background:radial-gradient(ellipse,#07090bb9 0%,#07090b75 44%,transparent 72%);
+  filter:blur(24px);
+  pointer-events:none;
+}
+.home-identity {position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:min(520px,100%)}
+.home-logo {display:block;width:116px;height:116px;filter:drop-shadow(0 5px 14px #0008)}
+.home-title {
+  margin:1px 0 0 .25em;
+  font:400 clamp(37px,5.1vw,63px)/1.18 Georgia,'Times New Roman',serif;
+  letter-spacing:.25em;
+  color:#eff0f2;
+  text-shadow:0 2px 17px #0008;
+}
+.home-subtitle {margin:12px 0 30px;color:#b2b5bc;font-size:10px;letter-spacing:.3em}
+.home-search {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:min(465px,100%);
+  height:47px;
+  background:#11141bbb;
+  border:1px solid #ffffff3b;
+  border-radius:25px;
+  padding:0 8px 0 17px;
+  box-shadow:0 12px 34px #0008;
+  backdrop-filter:blur(12px);
+}
+.home-search>span {font-size:27px;line-height:1;color:#aeb1b9}
+.home-search input {flex:1;min-width:0;color:#eff0f1;background:transparent;border:0;outline:none;font-size:14px}
+.home-search button {display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:#d0d1d5;color:#16181e;font-size:21px}
+.home-search button:hover {background:#eff0f1}
+.home-browse {display:inline-flex;gap:11px;align-items:center;margin-top:22px;font-size:13px;color:#c4c5ca;letter-spacing:.05em}
+.home-browse:hover {color:#fff}
+.home-browse span {font-size:17px}
+.home-section-title {margin:14px 0 20px}
+.view[data-view="home"] #home-progress {padding-bottom:15px}
+
+/* Video categories mirror the compact dark tab bar in the reference. */
+.video-tabs {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  width:max-content;
+  max-width:100%;
+  overflow-x:auto;
+  margin:23px 0 27px;
+  padding:6px;
+  border:1px solid #ffffff24;
+  border-radius:14px;
+  background:#14171cdd;
+  scrollbar-width:thin;
+}
+.video-tab {
+  flex:none;
+  min-height:40px;
+  padding:9px 18px;
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:#aeb1b8;
+  font-size:14px;
+  font-weight:550;
+  white-space:nowrap;
+  transition:background .18s,color .18s,border-color .18s;
+}
+.video-tab:hover {background:#ffffff0b;color:#f1f1f3}
+.video-tab.active,.video-tab[aria-selected="true"] {
+  background:linear-gradient(160deg,#343840,#262a31);
+  border-color:#ffffff34;
+  color:#f2f2f3;
+  box-shadow:0 2px 9px #0005;
+}
+.video-pane-heading {margin:4px 0 25px}
+.video-pane-heading h2 {margin:0 0 7px;font-weight:650;font-size:clamp(25px,3vw,36px);letter-spacing:-.035em}
+.video-pane-heading p {margin:0;color:#aaadb5;font-size:14px}
+
+@media(max-width:700px) {
+  .rail {background:#101319f4;border-top-color:#ffffff24}
+  .rail-nav a {min-height:55px}
+  .rail-nav .nav-icon,.rail-nav .nav-icon svg {width:21px;height:21px}
+  .home-landing {min-height:calc(100svh - 115px);padding:40px 10px}
+  .home-logo {width:98px;height:98px}
+  .home-title {font-size:clamp(30px,8vw,45px);letter-spacing:.19em;margin-left:.19em}
+  .home-subtitle {font-size:9px;margin-bottom:26px}
+  .video-tabs {width:100%;gap:3px;padding:5px}
+  .video-tab {font-size:12px;padding:9px 13px}
+  body:has(.view[data-view="home"]:not([hidden])) {background-attachment:scroll;background-position:40% center}
+}
+@media(prefers-reduced-motion:reduce) {
+  .video-tab,.button,.rail-nav a {transition:none}
+}

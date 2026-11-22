@@ -18,6 +18,7 @@ for (const title of data.titles) catalog.set(title.id, title);
 
 let selected = null, selectedEpisode = 1, currentSource = null, activeSources = [], activeIndex = -1;
 let localVideoUrl = '', localCaptionUrl = '', hls = null, searchSerial = 0, lastSavedSecond = -1;
+let activeVideoTab = 'anime', lastRenderedPage = '', detailReturnPage = 'videos', detailReturnTab = 'anime';
 const video = $('#video');
 const embed = $('#embed');
 
@@ -29,17 +30,36 @@ function status(message, error = false) {
 function applyAccent() { document.documentElement.style.setProperty('--accent', data.accent); $('#accent-input').value = data.accent; }
 applyAccent();
 
+const legacyVideoTabs = {anime: 'anime', movies: 'movies', shows: 'shows', list: 'favorites', favorites: 'favorites'};
+function selectVideoTab(tab) {
+  if (!['anime', 'movies', 'shows', 'favorites'].includes(tab)) tab = 'anime';
+  activeVideoTab = tab;
+  $$('[data-video-tab]').forEach(button => {
+    const active = button.dataset.videoTab === tab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  $$('[data-video-pane]').forEach(pane => { pane.hidden = pane.dataset.videoPane !== tab; });
+}
+
 function pageRoute() {
   let page = location.hash.replace('#', '') || data.lastPage;
-  if (page === 'detail' && !selected) page = 'anime';
+  const legacyTab = legacyVideoTabs[page];
+  if (legacyTab) { activeVideoTab = legacyTab; page = 'videos'; }
+  if (page === 'detail' && !selected) page = 'videos';
   if (!$(`[data-view="${page}"]`)) page = 'home';
   $$('.view').forEach(element => element.hidden = element.dataset.view !== page);
   $$('#nav a').forEach(element => { const active = element.dataset.page === page; element.classList.toggle('active', active); if (active) element.setAttribute('aria-current', 'page'); else element.removeAttribute('aria-current'); });
   if (page !== 'detail') { data.lastPage = page; save(); }
   if (page === 'home') renderHomeProgress();
-  if (page === 'movies' || page === 'shows') renderLocalTitles();
-  if (page === 'websites') renderWebsites();
-  if (page === 'list') renderFavorites();
+  if (page === 'videos') {
+    // Opening Videos normally starts with Anime; returning from a title keeps its tab.
+    if (!legacyTab && lastRenderedPage !== 'detail') activeVideoTab = 'anime';
+    selectVideoTab(activeVideoTab);
+    renderLocalTitles(); renderFavorites();
+  }
+  lastRenderedPage = page;
   window.scrollTo({top: 0, behavior: 'instant'});
 }
 window.addEventListener('hashchange', pageRoute);
@@ -133,7 +153,11 @@ async function loadAnime(search = '') {
 
 function openDetails(id) {
   selected = catalog.get(id);
-  if (!selected) { status('This title must be loaded again from the catalog.', true); location.hash = '#anime'; return; }
+  if (!selected) { status('This title must be loaded again from the catalog.', true); location.hash = '#videos'; return; }
+  if (lastRenderedPage !== 'detail') {
+    detailReturnPage = lastRenderedPage === 'home' ? 'home' : 'videos';
+    detailReturnTab = activeVideoTab;
+  }
   const cover = safeUrl(selected.cover || '', {allowEmpty:true});
   const hasEpisodeList = Number.isInteger(selected.episodes) && selected.episodes > 0;
   $('#detail-head').innerHTML = `<div class="detail-poster">☾${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(selected.name)} poster">` : ''}</div>
@@ -144,7 +168,7 @@ function openDetails(id) {
       <span class="chip">${hasEpisodeList ? `${selected.episodes} episode${selected.episodes === 1 ? '' : 's'}` : 'Episode list not yet imported'}</span>
       ${selected.score ? `<span class="chip">★ ${(selected.score / 10).toFixed(1)} / 10</span>` : ''}
       <div class="button-row">${hasEpisodeList ? '<button type="button" class="button primary" data-action="play" data-episode="1">Start watching</button>' : ''}
-      <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my list' : '♡ Add to my list'}</button></div></div>`;
+      <button type="button" class="button" data-action="favorite" data-id="${escapeHtml(selected.id)}">${data.favorites.includes(selected.id) ? '♥ In my favorites' : '♡ Add to my favorites'}</button></div></div>`;
   const count = hasEpisodeList ? Math.min(300, selected.episodes) : 0;
   $('#episode-grid').innerHTML = count ? Array.from({length:count}, (_, i) => {
     const episode = i + 1, key = progressKey(selected.id, episode);
@@ -164,21 +188,8 @@ function renderLocalTitles() {
 }
 
 function renderFavorites() {
-  const recent = Object.entries(data.progress)
-    .filter(([, record]) => record && Number.isFinite(record.time) && record.time > 0)
-    .sort((a, b) => (b[1].at || 0) - (a[1].at || 0))
-    .map(([key]) => key.replace(/:e\d+$/, ''));
-  const ids = [...new Set([...recent, ...data.favorites])];
-  const items = ids.map(id => catalog.get(id)).filter(Boolean);
-  $('#list-grid').innerHTML = items.length ? items.map(itemCard).join('') : '<div class="empty-state">Save a favorite or watch an episode to see it here.</div>';
-}
-
-function renderWebsites() {
-  $('#website-grid').innerHTML = data.websites.length ? data.websites.map(site =>
-    `<div class="feature-card glass"><span class="feature-glyph">◎</span><h3>${escapeHtml(site.name)}</h3>
-      <p>${escapeHtml(new URL(site.url).hostname)}</p><div class="button-row"><a class="button primary" href="${escapeHtml(site.url)}" target="_blank" rel="noopener noreferrer">Open website</a>
-      <button class="button" data-action="remove-website" data-id="${escapeHtml(site.id)}">Remove</button></div></div>`).join('') :
-    '<div class="empty-state">Your directory is empty. Add your first website above.</div>';
+  const items = data.favorites.map(id => catalog.get(id)).filter(Boolean);
+  $('#list-grid').innerHTML = items.length ? items.map(itemCard).join('') : '<div class="empty-state">No favorites yet. Open a title and select “Add to my favorites” to save it here.</div>';
 }
 
 function availableSources(item, episode) {
@@ -334,7 +345,6 @@ document.addEventListener('click', event => {
     data.favorites = data.favorites.includes(selected.id) ? data.favorites.filter(id => id !== selected.id) : [...data.favorites, selected.id];
     save(); openDetails(selected.id);
   }
-  if (action === 'remove-website') { data.websites = data.websites.filter(site => site.id !== button.dataset.id); save(); renderWebsites(); }
   if (action === 'remove-source') {
     data.sources[currentKey()] = (data.sources[currentKey()] || []).filter(source => source.id !== button.dataset.id);
     save(); $('#source-dialog').close(); openSourceEditor();
@@ -342,8 +352,29 @@ document.addEventListener('click', event => {
   }
 });
 
-$('#go-search').addEventListener('click', () => { location.hash = '#anime'; $('#anime-query').focus(); });
-$('#detail-back').addEventListener('click', () => { location.hash = selected?.type === 'anime' ? '#anime' : selected?.type === 'tv' ? '#shows' : '#movies'; });
+$('#go-search').addEventListener('click', () => {
+  location.hash = '#videos'; pageRoute(); selectVideoTab('anime'); $('#anime-query').focus();
+});
+$('#detail-back').addEventListener('click', () => {
+  if (detailReturnPage === 'home') location.hash = '#home';
+  else { activeVideoTab = detailReturnTab; location.hash = '#videos'; pageRoute(); }
+});
+$$('[data-video-tab]').forEach(button => button.addEventListener('click', () => selectVideoTab(button.dataset.videoTab)));
+$('.video-tabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = $$('[data-video-tab]');
+  const index = tabs.findIndex(button => button.dataset.videoTab === activeVideoTab);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+    : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault(); selectVideoTab(tabs[next].dataset.videoTab); tabs[next].focus();
+});
+$('#home-search-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const query = $('#home-query').value.trim();
+  location.hash = '#videos'; pageRoute(); selectVideoTab('anime');
+  $('#anime-query').value = query;
+  loadAnime(query);
+});
 $('#anime-search-form').addEventListener('submit', event => { event.preventDefault(); loadAnime($('#anime-query').value.trim()); });
 $('#player-close').addEventListener('click', closePlayer);
 $('#player-dialog').addEventListener('close', closePlayer);
@@ -388,14 +419,8 @@ $('#title-form').addEventListener('submit', event => {
   if (!name || !Number.isInteger(episodes) || episodes < 1 || episodes > 300) return;
   const item = {id:`custom:${crypto.randomUUID()}`,name,type,episodes,description:cleanText($('#title-description').value,700)};
   data.titles.push(item); catalog.set(item.id,item); save(); $('#title-dialog').close(); event.target.reset();
-  location.hash = type === 'tv' ? '#shows' : '#movies'; renderLocalTitles();
-});
-
-$('#website-form').addEventListener('submit', event => {
-  event.preventDefault();
-  const url = safeUrl($('#website-url').value), name = cleanText($('#website-name').value,70);
-  if (!url || !name) { alert('Enter a name and a complete HTTPS address.'); return; }
-  data.websites.push({id:crypto.randomUUID(),name,url}); save(); event.target.reset(); renderWebsites();
+  const newTab = type === 'tv' ? 'shows' : 'movies';
+  location.hash = '#videos'; pageRoute(); selectVideoTab(newTab); renderLocalTitles();
 });
 
 $('#accent-input').addEventListener('input', event => { data.accent = event.target.value; applyAccent(); save(); });
@@ -416,10 +441,10 @@ $('#import-data').addEventListener('change', async event => {
     if (!confirm('Replace this browser’s Cryalune library and progress with the imported backup?')) return;
     data = restoreData(imported); seedCatalog();
     for (const title of data.titles) catalog.set(title.id,title);
-    save(); applyAccent(); renderHomeProgress(); renderWebsites(); renderLocalTitles(); renderFavorites(); loadAnime(); pageRoute();
+    save(); applyAccent(); renderHomeProgress(); renderLocalTitles(); renderFavorites(); loadAnime(); pageRoute();
   } catch (error) { alert(`Import failed: ${error.message}`); }
   finally { event.target.value = ''; }
 });
 
-renderHomeProgress(); renderLocalTitles(); renderWebsites(); renderFavorites();
+renderHomeProgress(); renderLocalTitles(); renderFavorites();
 loadAnime(); pageRoute();

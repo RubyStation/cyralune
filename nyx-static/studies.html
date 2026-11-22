@@ -3,24 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090912">
-  <meta name="description" content="Cryalune — a private, customizable cinema and media directory.">
+  <meta name="theme-color" content="#0d1015">
+  <meta name="description" content="Cryalune — your calm, personal place for anime, movies, and TV.">
   <title>Cryalune — The Lunar Cinema</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/moonrise-logo.svg">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./quiet-theme.css">
   <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js"></script>
   <script type="module" src="./app.js"></script>
 </head>
 <body>
   <div class="app-shell">
     <aside class="rail" aria-label="Main navigation">
-      <a href="#home" class="mark" aria-label="Cryalune home">☾</a>
+      <a href="#home" class="mark" aria-label="Cryalune home"><img src="./assets/moonrise-logo.svg" alt="" width="46" height="46"></a>
       <nav id="nav" class="rail-nav">
         <a href="#home" data-page="home" title="Home"><span>⌂</span><small>Home</small></a>
-        <a href="#anime" data-page="anime" title="Anime"><span>◇</span><small>Anime</small></a>
-        <a href="#movies" data-page="movies" title="Movies"><span>▣</span><small>Movies</small></a>
-        <a href="#shows" data-page="shows" title="TV shows"><span>▥</span><small>TV</small></a>
-        <a href="#websites" data-page="websites" title="Website directory"><span>◎</span><small>Links</small></a>
-        <a href="#list" data-page="list" title="My list"><span>♡</span><small>My List</small></a>
+        <a href="#videos" data-page="videos" title="Videos"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="m9 10 6 3-6 3z"/></svg></span><small>Videos</small></a>
         <a href="#settings" data-page="settings" title="Settings"><span>⚙</span><small>Settings</small></a>
       </nav>
     </aside>
@@ -32,29 +30,51 @@
       </header>
 
       <section data-view="home" class="view">
-        <div class="hero glass">
-          <div class="hero-copy"><p class="kicker">YOUR UNIVERSE / ONE PLACE</p><h1>Stories beyond<br>the ordinary<span class="dot">.</span></h1>
-            <p>A personal home for anime, cinema, and the websites you love. Keep your sources, favorites, and watched moments together.</p>
-            <div class="button-row"><a href="#anime" class="button primary">Explore anime</a><a href="#list" class="button">Continue watching</a></div>
-          </div><div class="orbit" aria-hidden="true"><div class="moon"></div></div>
+        <div class="home-landing">
+          <div class="home-identity">
+            <img class="home-logo" src="./assets/moonrise-logo.svg" alt="Cryalune Moonrise logo" width="112" height="112">
+            <h1 class="home-title">CRYALUNE</h1>
+            <p class="home-subtitle">THE LUNAR CINEMA</p>
+            <form id="home-search-form" class="home-search" role="search">
+              <label class="sr-only" for="home-query">Search anime</label>
+              <span aria-hidden="true">⌕</span>
+              <input id="home-query" type="search" placeholder="Search anime" maxlength="100" autocomplete="off">
+              <button type="submit" aria-label="Search videos">→</button>
+            </form>
+            <a class="home-browse" href="#videos">Explore videos <span aria-hidden="true">→</span></a>
+          </div>
         </div>
-        <div class="section-title"><div><p class="kicker">THE COLLECTION</p><h2>Explore Cryalune</h2></div></div>
-        <div class="feature-grid">
-          <a class="feature-card glass" href="#anime"><span class="feature-glyph">◇</span><h3>Anime</h3><p>Search titles and select episodes.</p></a>
-          <a class="feature-card glass" href="#movies"><span class="feature-glyph">▣</span><h3>Movies</h3><p>Organize movies and their sources.</p></a>
-          <a class="feature-card glass" href="#shows"><span class="feature-glyph">▥</span><h3>TV Shows</h3><p>Keep a home for every series.</p></a>
-          <a class="feature-card glass" href="#websites"><span class="feature-glyph">◎</span><h3>Websites</h3><p>Your personal link directory.</p></a>
-        </div>
-        <div class="section-title"><div><p class="kicker">CONTINUE THE STORY</p><h2>Recently watched</h2></div></div>
+        <div class="section-title home-section-title"><div><p class="kicker">CONTINUE THE STORY</p><h2>Recently watched</h2></div></div>
         <div id="home-progress" class="card-grid"></div>
       </section>
 
-      <section data-view="anime" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE ARCHIVES / ANIME</p><h1>Anime library</h1><p>Our original Anvil collection is built in, so the titles remain visible offline. Search by title or genre, and add playable sources you are authorized to use.</p></div>
-        <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, such as Jujutsu Kaisen" maxlength="100"><button class="button primary" type="submit">Search</button></form>
-        <div class="section-title"><h2 id="anime-heading">The Anvil collection</h2><span class="muted" id="anime-count"></span></div>
-        <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
-        <div id="anime-grid" class="card-grid"></div>
+      <section data-view="videos" class="view" hidden>
+        <div class="page-intro"><p class="kicker">THE COLLECTION</p><h1>Videos</h1><p>Everything you love to watch, gathered in one calm place.</p></div>
+        <div class="video-tabs" role="tablist" aria-label="Video categories">
+          <button type="button" class="video-tab active" id="tab-anime" data-video-tab="anime" role="tab" aria-controls="pane-anime" aria-selected="true">Anime</button>
+          <button type="button" class="video-tab" id="tab-movies" data-video-tab="movies" role="tab" aria-controls="pane-movies" aria-selected="false">Movies</button>
+          <button type="button" class="video-tab" id="tab-shows" data-video-tab="shows" role="tab" aria-controls="pane-shows" aria-selected="false">TV Shows</button>
+          <button type="button" class="video-tab" id="tab-favorites" data-video-tab="favorites" role="tab" aria-controls="pane-favorites" aria-selected="false">♡ My Favorites</button>
+        </div>
+        <div id="pane-anime" data-video-pane="anime" role="tabpanel" aria-labelledby="tab-anime">
+          <div class="video-pane-heading"><h2>Anime library</h2><p>Browse the restored Anvil collection or search for a title.</p></div>
+          <form id="anime-search-form" class="search-bar"><label class="sr-only" for="anime-query">Search anime</label><span>⌕</span><input id="anime-query" type="search" placeholder="Search anime, such as Jujutsu Kaisen" maxlength="100"><button class="button primary" type="submit">Search</button></form>
+          <div class="section-title"><h2 id="anime-heading">The Anvil collection</h2><span class="muted" id="anime-count"></span></div>
+          <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
+          <div id="anime-grid" class="card-grid"></div>
+        </div>
+        <div id="pane-movies" data-video-pane="movies" role="tabpanel" aria-labelledby="tab-movies" hidden>
+          <div class="video-pane-heading"><h2>Movies</h2><p>Your films and their available sources.</p></div>
+          <button class="button primary add-title" data-type="movie">＋ Add movie</button><div id="movie-grid" class="card-grid spaced"></div>
+        </div>
+        <div id="pane-shows" data-video-pane="shows" role="tabpanel" aria-labelledby="tab-shows" hidden>
+          <div class="video-pane-heading"><h2>TV Shows</h2><p>Keep every series and episode together.</p></div>
+          <button class="button primary add-title" data-type="tv">＋ Add TV show</button><div id="tv-grid" class="card-grid spaced"></div>
+        </div>
+        <div id="pane-favorites" data-video-pane="favorites" role="tabpanel" aria-labelledby="tab-favorites" hidden>
+          <div class="video-pane-heading"><h2>My Favorites</h2><p>Titles you have saved to return to later.</p></div>
+          <div id="list-grid" class="card-grid"></div>
+        </div>
       </section>
 
       <section data-view="detail" class="view" hidden>
@@ -64,35 +84,14 @@
         <div id="episode-grid" class="episode-grid"></div>
       </section>
 
-      <section data-view="movies" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE ARCHIVES / FILMS</p><h1>Movie library</h1><p>Add your own film listings and connect playable, authorized media sources.</p></div>
-        <button class="button primary add-title" data-type="movie">＋ Add movie</button><div id="movie-grid" class="card-grid spaced"></div>
-      </section>
-
-      <section data-view="shows" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE ARCHIVES / SERIES</p><h1>TV shows</h1><p>Keep each season and episode organized, all under one Cryalune website.</p></div>
-        <button class="button primary add-title" data-type="tv">＋ Add TV show</button><div id="tv-grid" class="card-grid spaced"></div>
-      </section>
-
-      <section data-view="websites" class="view" hidden>
-        <div class="page-intro"><p class="kicker">YOUR DIRECTORY</p><h1>Websites</h1><p>Bookmark as many relevant websites as you need. Each opens normally in its own tab.</p></div>
-        <form id="website-form" class="glass editor-form"><h3>Add a website</h3><div class="form-row"><label>Name<input id="website-name" maxlength="70" required placeholder="My favorite site"></label><label>HTTPS address<input id="website-url" type="url" required placeholder="https://example.org"></label><button class="button primary" type="submit">Save link</button></div></form>
-        <div id="website-grid" class="feature-grid spaced"></div>
-      </section>
-
-      <section data-view="list" class="view" hidden>
-        <div class="page-intro"><p class="kicker">THE PERSONAL COLLECTION</p><h1>My list</h1><p>Saved favorites and watch progress from this browser.</p></div>
-        <div id="list-grid" class="card-grid"></div>
-      </section>
-
       <section data-view="settings" class="view" hidden>
         <div class="page-intro"><p class="kicker">PERSONALIZE</p><h1>Settings</h1><p>Your preferences and watch progress are saved locally on this device.</p></div>
-        <div class="settings-grid"><div class="glass settings-card"><h3>Appearance</h3><label>Accent color<input id="accent-input" type="color" value="#a999ff"></label><p class="muted">Changes the highlight color across Cryalune.</p></div>
-          <div class="glass settings-card"><h3>Backup</h3><p>Export your library, sources, bookmarks, and progress to a JSON file.</p><div class="button-row"><button id="export-data" class="button">Export backup</button><label class="button file-button">Import backup<input id="import-data" type="file" accept="application/json,.json" hidden></label></div></div>
+        <div class="settings-grid"><div class="glass settings-card"><h3>Appearance</h3><label>Accent color<input id="accent-input" type="color" value="#abb0ba"></label><p class="muted">Changes the highlight color across Cryalune.</p></div>
+          <div class="glass settings-card"><h3>Backup</h3><p>Export your library, sources, favorites, and progress to a JSON file. Older bookmarked links are retained in backups.</p><div class="button-row"><button id="export-data" class="button">Export backup</button><label class="button file-button">Import backup<input id="import-data" type="file" accept="application/json,.json" hidden></label></div></div>
           <div class="glass settings-card"><h3>Privacy</h3><p>Media files selected from your computer are not uploaded. Sources and progress remain in this browser unless you export them.</p><button id="clear-progress" class="button danger">Clear watch history</button></div>
         </div>
       </section>
-      <footer>CRYALUNE <span>·</span> YOUR UNIVERSE, YOUR PACE <span>·</span> ANVIL COLLECTION + <a href="https://anilist.co" target="_blank" rel="noopener noreferrer">ANILIST SEARCH</a></footer>
+      <footer>CRYALUNE <span>·</span> THE LUNAR CINEMA <span>·</span> YOUR COLLECTION, YOUR PACE</footer>
     </main>
   </div>
 
