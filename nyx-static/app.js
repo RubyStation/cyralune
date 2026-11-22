@@ -2,7 +2,7 @@ import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSou
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
-import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner} from './banner-catalog.js';
+import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, visibleAnime} from './banner-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -65,7 +65,7 @@ function findWideBanners(items) {
   if (!bannerWorker && pendingWideBanners.size) {
     bannerWorker = resolveWideBanners().finally(() => {
       bannerWorker = null;
-      if (pendingWideBanners.size && !bannerLookupUnavailable && !data.lowDataMode) findWideBanners(animeResults);
+      renderAnime(animeResults);
     });
   }
 }
@@ -97,6 +97,7 @@ async function resolveWideBanners() {
       bannerLookupUnavailable = true;
       $('#retry-banners').hidden = false;
       pendingWideBanners.clear();
+      $('#anime-status').textContent = 'Widescreen artwork is unavailable. Showing saved anime from the local catalog.';
       if (animeResults.length) renderAnime(animeResults);
       break;
     } finally { clearTimeout(timeout); }
@@ -207,28 +208,29 @@ function renderHomeProgress() {
   const recentIds = [...new Set(Object.entries(data.progress).filter(([, v]) => v && v.time > 0)
     .sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).map(([key]) => key.replace(/:e\d+$/, '')))].slice(0, 6);
   const items = recentIds.map(id => catalog.get(id) || {id, name: data.progress[Object.keys(data.progress).find(k => k.startsWith(id + ':e'))]?.title || id, type:'anime'});
-  const visible = items.filter(item => item.type !== 'anime' || wideBanner(item));
-  $('#home-progress').innerHTML = visible.length ? visible.map(itemCard).join('') : `<div class="empty-state">Nothing with a verified banner to continue yet. Your viewing progress is still saved.</div>`;
+  $('#home-progress').innerHTML = items.length ? items.map(itemCard).join('') : `<div class="empty-state">Nothing watched yet. Your progress will appear here when you begin an episode.</div>`;
 }
 
 const ANIME_PAGE_SIZE = 20;
 let animePage = 1;
 let animeResults = [];
+let displayedAnime = [];
 function renderAnime(items, {resetPage = false} = {}) {
   animeResults = items;
   findWideBanners(items);
-  const bannered = items.filter(item => Boolean(wideBanner(item)));
+  const offlineFallback = data.lowDataMode || bannerLookupUnavailable || Boolean(bannerWorker);
+  displayedAnime = visibleAnime(items, {offline:offlineFallback,hasBanner:item => Boolean(wideBanner(item))});
   if (resetPage) animePage = 1;
-  const totalPages = Math.max(1, Math.ceil(bannered.length / ANIME_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(displayedAnime.length / ANIME_PAGE_SIZE));
   animePage = Math.min(animePage, totalPages);
   const start = (animePage - 1) * ANIME_PAGE_SIZE;
-  const visible = bannered.slice(start, start + ANIME_PAGE_SIZE);
-  const emptyMessage = bannerLookupUnavailable ? 'Wide banner artwork could not be checked from this network. Your saved catalog is untouched; retry when the artwork service is available.'
+  const visible = displayedAnime.slice(start, start + ANIME_PAGE_SIZE);
+  const emptyMessage = bannerLookupUnavailable ? 'The online artwork service is unavailable. Your saved anime library is still here; try a different search or retry banners later.'
     : pendingWideBanners.size || bannerWorker ? 'Finding widescreen artwork for the collection…'
     : items.length ? 'No matching series have a verified wide banner yet. Titles without banners are hidden, not deleted.'
     : 'No matching anime found. Try another title or genre.';
   $('#anime-grid').innerHTML = visible.length ? visible.map(itemCard).join('') : `<div class="empty-state">${emptyMessage}</div>`;
-  $('#anime-count').textContent = `${bannered.length} with banners`;
+  $('#anime-count').textContent = offlineFallback ? `${displayedAnime.length} saved titles · offline` : `${displayedAnime.length} with banners`;
   $('#anime-pagination').hidden = totalPages === 1;
   $('#anime-page-info').textContent = `Page ${animePage} of ${totalPages}`;
   $('#anime-page-numbers').innerHTML = Array.from({length:totalPages}, (_, i) => {
@@ -241,7 +243,7 @@ function renderAnime(items, {resetPage = false} = {}) {
 
 function changeAnimePage(direction) {
   const next = animePage + direction;
-  if (next < 1 || next > Math.ceil(animeResults.length / ANIME_PAGE_SIZE)) return;
+  if (next < 1 || next > Math.max(1,Math.ceil(displayedAnime.length / ANIME_PAGE_SIZE))) return;
   animePage = next;
   renderAnime(animeResults);
   $('#anime-heading').scrollIntoView({behavior:'smooth', block:'start'});
@@ -280,7 +282,7 @@ async function loadAnime(search = '') {
   $('#anime-status').classList.remove('error');
   renderAnime(saved, {resetPage:true});
   if (data.lowDataMode) {
-    $('#anime-status').textContent = 'Low-Data Mode is on. Showing titles with previously verified banners; online artwork lookup is paused.';
+    $('#anime-status').textContent = 'Low-Data Mode is on. Your saved anime library remains available without online discovery.';
     return;
   }
   $('#anime-status').textContent = 'Checking for authentic widescreen banners and additional anime…';
@@ -317,11 +319,15 @@ async function loadAnime(search = '') {
     save();
     const items = localAnime(search);
     renderAnime(items);
-    $('#anime-status').textContent = 'Showing series with widescreen artwork. Titles without banners are hidden, not deleted; video sources remain separate.';
+    $('#anime-status').textContent = 'Saved anime are ready. Checking widescreen banners; artwork filters apply only when the service is reachable.';
   } catch (error) {
     if (request !== searchSerial) return;
+    bannerLookupUnavailable = true;
+    pendingWideBanners.clear();
+    $('#retry-banners').hidden = false;
+    renderAnime(localAnime(search));
     $('#anime-status').textContent = saved.length
-      ? 'Online discovery is unavailable. Only titles with previously verified banners can appear right now.'
+      ? 'Online discovery is unavailable on this network. Showing your saved anime library instead.'
       : 'No saved matches, and online search is unavailable right now. Try another title or genre.';
     if (!saved.length) $('#anime-status').classList.add('error');
   }
@@ -451,10 +457,9 @@ function renderLocalTitles() {
 }
 
 function renderFavorites() {
-  const items = data.favorites.map(id => catalog.get(id)).filter(Boolean)
-    .filter(item => item.type !== 'anime' || wideBanner(item));
+  const items = data.favorites.map(id => catalog.get(id)).filter(Boolean);
   $('#list-grid').innerHTML = items.length ? items.map(itemCard).join('')
-    : '<div class="empty-state">No favorites with widescreen artwork available yet. Saved favorites without banners remain in your browser.</div>';
+    : '<div class="empty-state">No favorites yet. Saved favorites stay visible even when artwork services are unavailable.</div>';
 }
 
 function availableSources(item, episode) {

@@ -27,3 +27,14 @@ export function verifiedBanner(name, media, year = 0) {
   const host = new URL(url).hostname.toLowerCase();
   return host === 'anilist.co' || host.endsWith('.anilist.co') ? url : '';
 }
+
+// A filtered network must not turn the locally bundled episode library into an
+// empty page. Keep poster-backed, episode-backed and personally added titles.
+export function visibleAnime(items, {offline = false, hasBanner = () => false} = {}) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(item => hasBanner(item) || (offline && (
+    Number.isInteger(item.episodes) && item.episodes > 0 ||
+    Boolean(item.cover || item.detailCover) ||
+    String(item.id || '').startsWith('custom:')
+  )));
+}

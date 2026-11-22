@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {safeUrl, cleanText, escapeHtml, normalizedSource, playableEmbedUrl, sortedSources,
   defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups} from '../nyx-static/core.js';
-import {normalizedTitle, bannerQuery, verifiedBanner} from '../nyx-static/banner-catalog.js';
+import {normalizedTitle, bannerQuery, verifiedBanner, visibleAnime} from '../nyx-static/banner-catalog.js';
 
 if (!globalThis.crypto) globalThis.crypto = {randomUUID: () => 'test-uuid'};
 
@@ -88,6 +88,20 @@ test('wide banners are distinct from covers and must match the series', () => {
   assert.equal(verifiedBanner('Demon Slayer: Kimetsu no Yaiba',{...record,bannerImage:'https://example.org/banner.jpg'}),'');
   assert.match(bannerQuery(['Naruto', 'Doraemon']),/b1: Media\(search: "Doraemon"/);
   assert.equal(bannerQuery([]),'');
+});
+
+test('offline anime fallback preserves saved series without revealing blank discovery entries', () => {
+  const items = [
+    {id:'offline:known', name:'Known', episodes:12, cover:'./assets/posters/known.jpg'},
+    {id:'offline:unnamed', name:'Title only', episodes:0, cover:''},
+    {id:'custom:mine', name:'My anime', episodes:2, cover:''},
+    {id:'anime:banner', name:'Banner title', episodes:0, cover:''}
+  ];
+  const hasBanner = item => item.id === 'anime:banner';
+  assert.deepEqual(visibleAnime(items,{hasBanner}).map(item => item.name),['Banner title']);
+  assert.deepEqual(visibleAnime(items,{offline:true,hasBanner}).map(item => item.name),
+    ['Known','My anime','Banner title']);
+  assert.deepEqual(visibleAnime([],{offline:true}),[]);
 });
 
 test('invalid backup fields are constrained when restored', () => {
