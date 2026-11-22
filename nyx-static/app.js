@@ -209,7 +209,6 @@ function animePosterCard(item) {
   return `<button type="button" class="anime-poster-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}${episodeCount ? `, ${episodeCount} episodes` : ''}">
     <span class="anime-poster-placeholder" aria-hidden="true">${name}</span>
     ${image ? `<img src="${escapeHtml(image)}"${fallback} alt="" loading="lazy" decoding="async">` : ''}
-    ${episodeCount ? `<span class="anime-episode-badge">EP ${episodeCount}</span>` : ''}
     <span class="anime-poster-title">${name}</span>
   </button>`;
 }
