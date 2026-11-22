@@ -28,11 +28,15 @@ The browser must serve JavaScript modules over HTTP(S), so don't double-click
 `index.html` as a `file:` URL. From the repository folder, run:
 
 ```bash
-python3 -m http.server 8000 --directory dist
+python3 -m http.server 8000 --directory nyx-static
 ```
 
 Then open **http://localhost:8000**. On Windows, `py -m http.server 8000
---directory dist` works when Python is installed.
+--directory nyx-static` works when Python is installed.
+
+The main website is in `nyx-static/studies.html`. The `index.html` in that
+folder sends visitors there, so both the hosted site root and `/studies.html`
+work on an ordinary static web host.
 
 To test playback: Home or Movies → **The Lunar Test Reel** → **Episode 1**.
 The bundled demo is an original test clip, not a JJK episode.
@@ -42,12 +46,13 @@ or choose a video file you already own and are permitted to use.
 
 ## Put Cyralune on GitHub
 
-1. In your GitHub account, make a **new private repository** named `cyralune`.
-2. Extract this project. Upload `dist/`, `tests/`, `README.md`, and
-   `package.json` into that repository (or use Git locally).
-3. Keep it **private**. A private GitHub repository stores code but does not by
-   itself provide a private, accessible website. Hosting is a separate choice.
-4. For an eventual static host, set its publish directory to `dist/`.
+1. Keep all website files in **`nyx-static/`**, replacing the old `dist/` folder.
+2. For a static host, set the publish/output directory to `nyx-static`.
+   The `index.html` in that folder opens the full site.
+3. Hosting is separate from storing code in GitHub. A private repository does
+   not by itself provide a publicly accessible website.
+4. jsDelivr serves files from public repositories, but its documented HTML
+   content type is `text/plain`; use a website host for reliable HTML rendering.
 
 The site itself needs no backend, but anime discovery, streaming, and HLS.js
 load external resources and are subject to the respective providers' limits
@@ -65,11 +70,12 @@ Code layout:
 
 | Path | Role |
 | --- | --- |
-| `dist/index.html` | Interface and player dialogs |
-| `dist/styles.css` | Lunar theme and responsive layouts |
-| `dist/app.js` | Catalog, pages, playback, progress, backups |
-| `dist/core.js` | Source validation and state helpers |
-| `dist/assets/` | Original test MP4 and subtitles |
+| `nyx-static/index.html` | Redirect from the hosted site root to the main page |
+| `nyx-static/studies.html` | Interface and player dialogs |
+| `nyx-static/styles.css` | Lunar theme and responsive layouts |
+| `nyx-static/app.js` | Catalog, pages, playback, progress, backups |
+| `nyx-static/core.js` | Source validation and state helpers |
+| `nyx-static/assets/` | Original test MP4 and subtitles |
 | `tests/` | Node tests for important validation paths |
 
 ## Provenance and permissions

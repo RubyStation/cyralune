@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources,
-  defaultData, restoreData, progressKey} from '../dist/core.js';
+  defaultData, restoreData, progressKey} from '../nyx-static/core.js';
 
 if (!globalThis.crypto) globalThis.crypto = {randomUUID: () => 'test-uuid'};
 

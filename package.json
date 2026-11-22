@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check dist/app.js && node --check dist/core.js"
+    "check": "node --check nyx-static/app.js && node --check nyx-static/core.js"
   }
 }
