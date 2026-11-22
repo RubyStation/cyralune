@@ -176,10 +176,13 @@ function trustedCover(raw) {
 
 function itemCard(item) {
   const name = escapeHtml(item.name), format = escapeHtml(item.format || (item.type === 'tv' ? 'TV series' : item.type === 'anime' ? 'Anime' : 'Movie'));
-  const url = data.lowDataMode ? '' : trustedCover(item.cover);
+  const thumbnail = data.lowDataMode ? '' : trustedCover(item.cover);
   const hd = data.lowDataMode ? '' : trustedCover(item.detailCover);
-  const responsive = url && hd ? ` srcset="${escapeHtml(url)} 1x, ${escapeHtml(hd)} 2x" data-fallback="${escapeHtml(url)}"` : '';
-  const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}"${responsive} alt="${name} poster" loading="lazy" decoding="async">` : ''}`;
+  // A 1x screen used to pick the old small thumbnail from srcset, so the HD
+  // replacements appeared to do nothing. Always display the genuine HD source.
+  const url = hd || thumbnail;
+  const fallback = hd && thumbnail && hd !== thumbnail ? ` data-fallback="${escapeHtml(thumbnail)}"` : '';
+  const poster = `<span class="poster-placeholder">${name}</span>${url ? `<img src="${escapeHtml(url)}"${fallback} alt="${name} poster" loading="lazy" decoding="async">` : ''}`;
   const progress = getLatestProgress(item.id);
   const subtitle = [item.year || '', format, item.episodes ? `${item.episodes} episode${item.episodes === 1 ? '' : 's'}` : '', item.score ? `★ ${(item.score / 10).toFixed(1)}` : ''].filter(Boolean).join(' · ');
   return `<button type="button" class="media-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}">
