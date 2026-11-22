@@ -1011,6 +1011,18 @@ $('#low-data-mode').addEventListener('change', event => {
 $('#clear-progress').addEventListener('click', () => {
   if (confirm('Clear all saved watch positions? Your sources, favorites, and manual episode marks will remain.')) { data.progress = {}; save(); renderHomeProgress(); renderEpisodes(); }
 });
+$('#temporary-test-sound').addEventListener('click', async () => {
+  const clip = $('#temporary-test-video');
+  const status = $('#temporary-test-sound-status');
+  clip.muted = false;
+  clip.volume = 1;
+  try {
+    await clip.play();
+    status.textContent = 'Sound is enabled at full player volume. If you still hear nothing, check your Chromebook volume and make sure this Chrome tab is not muted.';
+  } catch {
+    status.textContent = 'Sound is enabled. Press Play on the video. If it stays silent, check the Chromebook volume and Chrome tab mute setting.';
+  }
+});
 $('#export-data').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url = URL.createObjectURL(blob), a = document.createElement('a');

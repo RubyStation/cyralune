@@ -251,7 +251,9 @@ body:has(.view[data-view="home"]:not([hidden])) {
   border-radius:12px;
   background:#000;
 }
-.temporary-test-link {margin:18px 0 0}
+.temporary-test-actions {display:flex;flex-wrap:wrap;gap:11px;margin-top:18px}
+.temporary-test-actions .button {min-height:42px}
+#temporary-test-sound-status {margin-top:12px;font-size:13px}
 .setting-toggle {display:flex;align-items:center;gap:12px;color:#e0e2e6}
 .setting-toggle input {width:18px;height:18px;accent-color:#abb0ba}
 .card-grid {grid-template-columns:repeat(auto-fill,minmax(170px,1fr));justify-content:start}

@@ -19,3 +19,16 @@ test('HLS client is bundled on our own origin for restricted networks', () => {
   assert.ok(script.includes("script.src = './assets/vendor/hls.min.js'"));
   assert.ok(script.includes('Hls.Events.MANIFEST_PARSED'));
 });
+
+test('temporary Chromebook clip has an explicit sound control', () => {
+  assert.match(html, /id="temporary-test-sound"/);
+  assert.match(html, /id="temporary-test-video"/);
+  assert.ok(script.includes("$('#temporary-test-sound').addEventListener("));
+  assert.ok(script.includes('clip.muted = false'));
+  assert.ok(script.includes('clip.volume = 1'));
+  assert.ok(statSync(new URL('../nyx-static/assets/temporary-chromebook-test.mp4', import.meta.url)).size > 1000000);
+});
+
+test('privacy notice and policy links are absent from the page', () => {
+  assert.doesNotMatch(html, /privacy-notice|privacy-open|privacy-footer|Privacy &amp; attribution/);
+});
