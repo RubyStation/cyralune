@@ -1,5 +1,5 @@
 // The seven-title catalog carried over from the original Anvil Anime Center.
-// All metadata is bundled locally; posters are optional remote images.
+// All metadata is bundled locally; credited posters are cached from TVmaze.
 // Video streams and the private Anvil source database are intentionally excluded.
 export const JJK_EPISODES = Object.freeze([
   'Ryomen Sukuna', 'For Myself', 'Girl of Steel', 'Curse Womb Must Die',
@@ -21,43 +21,57 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Action · Supernatural', type: 'anime', format: 'TV',
     episodes: JJK_EPISODES.length, episodeTitles: JJK_EPISODES,
     description: 'Yuji Itadori enters the dangerous world of jujutsu sorcerers and curses.',
-    cover: 'https://images.entertainment.ie/media/season/k3LNFvoLJidIinXkvmahCpShL12.jpg'
+    cover: './assets/posters/jujutsu-kaisen.jpg',
+    detailCover: './assets/posters-hd/jujutsu-kaisen.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/48450/jujutsu-kaisen'
   },
   {
     id: 'anvil:pokemon', name: 'Pokémon', year: 1997, score: 80,
     genre: 'Adventure · Fantasy', type: 'anime', format: 'TV',
     description: 'A journey through the world of Pokémon, filled with discovery and friendship.',
-    cover: 'https://m.media-amazon.com/images/M/MV5BNGI1NTgzNTUtOWY5My00YjhkLTliOGUtMmUzYmEzMTgzMzU1XkEyXkFqcGc%40._V1_.jpg'
+    cover: './assets/posters/pokemon.jpg',
+    detailCover: './assets/posters-hd/pokemon.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/590/pokemon'
   },
   {
     id: 'anvil:onepiece', name: 'One Piece', year: 1999, score: 88,
     genre: 'Adventure · Fantasy', type: 'anime', format: 'TV',
     description: 'Monkey D. Luffy and his crew sail the Grand Line in search of the legendary treasure.',
-    cover: 'https://m.media-amazon.com/images/M/MV5BYzNjOTZlNDMtZWNlNC00YzMyLTkwNzEtZGE5MmJkMTg1NjJjXkEyXkFqcGc%40._V1_.jpg'
+    cover: './assets/posters/one-piece.jpg',
+    detailCover: './assets/posters-hd/one-piece.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/1505/one-piece'
   },
   {
     id: 'anvil:doraemon', name: 'Doraemon', year: 2005, score: 81,
     genre: 'Comedy · Sci-Fi', type: 'anime', format: 'TV',
     description: 'A futuristic robotic cat brings remarkable gadgets into Nobita’s everyday life.',
-    cover: 'https://media.animeoshi.com/anime/images/tmdb/1194773989.jpg'
+    cover: './assets/posters/doraemon.jpg',
+    detailCover: './assets/posters-hd/doraemon.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/55578/doraemon'
   },
   {
     id: 'anvil:maruko', name: 'Chibi Maruko-chan', year: 1990, score: 76,
     genre: 'Comedy · Slice of Life', type: 'anime', format: 'TV',
     description: 'The amusing everyday adventures of Maruko, her family, and her classmates.',
-    cover: 'https://image.tmdb.org/t/p/original/yXVou9PrKpdtXoAmYzg54lvEnaH.jpg'
+    cover: './assets/posters/chibi-maruko-chan.jpg',
+    detailCover: './assets/posters-hd/chibi-maruko-chan.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/22517/chibi-maruko-chan'
   },
   {
     id: 'anvil:conan', name: 'Detective Conan', year: 1996, score: 80,
     genre: 'Mystery · Adventure', type: 'anime', format: 'TV',
     description: 'A brilliant young detective tackles baffling mysteries while hiding his identity.',
-    cover: 'https://m.media-amazon.com/images/M/MV5BNGNjMjVmODYtMGMzZi00MWUyLTk1ZDQtYzI2ZTk2MmYzYTZiXkEyXkFqcGc%40._V1_.jpg'
+    cover: './assets/posters/detective-conan.jpg',
+    detailCover: './assets/posters-hd/detective-conan.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/5429/detective-conan'
   },
   {
     id: 'anvil:rantaro', name: 'Ninja Boy Rantaro', year: 1993, score: 69,
     genre: 'Comedy · Adventure', type: 'anime', format: 'TV',
     description: 'Young ninja students navigate friendship, training, and mischievous adventures.',
-    cover: 'https://peliculas.lavanguardia.com/imagenes/w1280/raKlXyICQBeTxYavErIRybR6g8d.jpg'
+    cover: './assets/posters/ninja-boy-rantaro.jpg',
+    detailCover: './assets/posters-hd/ninja-boy-rantaro.webp',
+    sourceUrl: 'https://www.tvmaze.com/shows/88345/nintama-rantaro'
   }
 ]);
 

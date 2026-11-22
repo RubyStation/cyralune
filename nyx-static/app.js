@@ -2,7 +2,7 @@ import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSou
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
-import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, visibleAnime} from './banner-catalog.js';
+import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache, visibleAnime} from './banner-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -31,11 +31,7 @@ const embed = $('#embed');
 const wideBanners = new Map();
 try {
   const cached = JSON.parse(localStorage.getItem(BANNER_CACHE_KEY) || '{}');
-  if (cached && typeof cached === 'object' && !Array.isArray(cached)) {
-    for (const [name, url] of Object.entries(cached).slice(0, 400)) {
-      if (name.length < 140 && verifiedBanner(name, {title:{english:name},bannerImage:url})) wideBanners.set(name,url);
-    }
-  }
+  for (const [key, url] of restoreBannerCache(cached)) wideBanners.set(key, url);
 } catch { /* An unavailable cache never prevents the collection from opening. */ }
 const missingWideBanners = new Set();
 const pendingWideBanners = new Map();
@@ -53,6 +49,15 @@ function rememberWideBanner(name, url) {
   wideBanners.set(key,url);
   try { localStorage.setItem(BANNER_CACHE_KEY, JSON.stringify(Object.fromEntries(wideBanners))); }
   catch { /* Artwork still works for this browser session. */ }
+}
+
+function heroArtwork(item) {
+  if (!item || data.lowDataMode) return [];
+  const banner = wideBanner(item);
+  const alternatives = [trustedCover(item.detailCover), trustedCover(item.cover)];
+  return [...new Set([banner, ...alternatives].filter(Boolean))].map(url => ({
+    url, portrait: url !== banner
+  }));
 }
 
 function findWideBanners(items) {
@@ -185,8 +190,23 @@ function itemCard(item) {
 document.addEventListener('error', event => {
   const img = event.target;
   if (img.matches?.('.media-detail-banner')) {
-    img.remove();
-    $('#media-source-note').textContent = 'This artwork could not load on the current network. The series has not been deleted.';
+    if (!img.isConnected) return;
+    let fallbacks = [];
+    try { fallbacks = JSON.parse(img.dataset.fallbacks || '[]'); } catch { /* Invalid artwork is never rendered. */ }
+    if (fallbacks.length) {
+      const [next, ...remaining] = fallbacks;
+      img.dataset.fallbacks = JSON.stringify(remaining);
+      img.classList.toggle('is-portrait', next.portrait);
+      img.alt = `${selected?.name || 'Series'} promotional artwork`;
+      img.src = next.url;
+    } else {
+      img.remove();
+      $('#media-detail-hero').classList.add('art-unavailable');
+      const note = document.createElement('span');
+      note.className = 'artwork-note';
+      note.textContent = 'Artwork unavailable on this network';
+      $('#media-detail-hero .media-detail-hero-copy')?.append(note);
+    }
     return;
   }
   if (!img.matches?.('.poster img, .detail-poster img')) return;
@@ -372,13 +392,16 @@ function openDetails(id) {
 
 function renderMediaDetail() {
   if (!selected) return;
-  const image = data.lowDataMode ? '' : wideBanner(selected);
+  const artwork = heroArtwork(selected);
+  const [firstArtwork, ...fallbackArtwork] = artwork;
   const metadata = [selected.year || '', selected.format || (selected.type === 'anime' ? 'Anime' : selected.type === 'tv' ? 'TV series' : 'Movie'),
     selected.score ? `★ ${(selected.score / 10).toFixed(1)} / 10` : ''].filter(Boolean);
+  $('#media-detail-hero').classList.toggle('art-unavailable', !firstArtwork);
   $('#media-detail-hero').innerHTML = `
-    ${image ? `<img class="media-detail-banner" src="${escapeHtml(image)}" alt="${escapeHtml(selected.name)} widescreen banner" loading="eager">` : ''}
+    ${firstArtwork ? `<img class="media-detail-banner${firstArtwork.portrait ? ' is-portrait' : ''}" src="${escapeHtml(firstArtwork.url)}" data-fallbacks="${escapeHtml(JSON.stringify(fallbackArtwork))}" alt="${escapeHtml(selected.name)} promotional artwork" loading="eager">` : ''}
     <div class="media-detail-hero-copy"><span class="kicker">CRYALUNE / ${escapeHtml(selected.type.toUpperCase())}</span>
-      <h2 id="media-detail-title">${escapeHtml(selected.name)}</h2><p>${escapeHtml(metadata.join(' · '))}</p></div>`;
+      <h2 id="media-detail-title">${escapeHtml(selected.name)}</h2><p>${escapeHtml(metadata.join(' · '))}</p>
+      ${!firstArtwork ? `<span class="artwork-note">${data.lowDataMode ? 'Artwork hidden in Low-Data Mode' : 'Artwork unavailable on this network'}</span>` : ''}</div>`;
   $('#media-detail-description').textContent = selected.description || 'Part of your personal Cryalune collection.';
   $('#media-detail-facts').innerHTML = [
     ['Format', selected.format || (selected.type === 'tv' ? 'TV series' : selected.type === 'anime' ? 'Anime' : 'Movie')],

@@ -28,6 +28,18 @@ export function verifiedBanner(name, media, year = 0) {
   return host === 'anilist.co' || host.endsWith('.anilist.co') ? url : '';
 }
 
+// Accept both pre-normalization caches and newer caches without losing saved art.
+export function restoreBannerCache(cached) {
+  const restored = new Map();
+  if (!cached || typeof cached !== 'object' || Array.isArray(cached)) return restored;
+  for (const [name, url] of Object.entries(cached).slice(0, 400)) {
+    const key = normalizedTitle(name);
+    if (key && key.length < 140 && verifiedBanner(name, {title:{english:name},bannerImage:url}))
+      restored.set(key, url);
+  }
+  return restored;
+}
+
 // A filtered network must not turn the locally bundled episode library into an
 // empty page. Keep poster-backed, episode-backed and personally added titles.
 export function visibleAnime(items, {offline = false, hasBanner = () => false} = {}) {

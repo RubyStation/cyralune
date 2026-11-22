@@ -16,6 +16,13 @@ static frontend.
   episode data and video sources are not invented. Missing titles can be added manually.
 - Home, Videos, and Settings in one responsive site; no Links category.
 - AniList-powered title discovery, ratings, and official/promotional cover art.
+- Locally cached, credited TVmaze posters for all seven original Anvil series,
+  with high-resolution copies for their detail views. The other 76 poster-backed
+  anime also have locally stored thumbnails and HD artwork.
+- Full-width series artwork in title selection: a verified AniList widescreen
+  banner when it loads, or that series' own poster rendered as a cinematic
+  backdrop if AniList is blocked. Prior verified banner results persist between
+  visits. Low-Data Mode deliberately hides image downloads.
 - A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
 - An original short demo MP4 and caption file so you can test the player.
 - A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
@@ -88,6 +95,11 @@ Code layout:
 | `nyx-static/core.js` | Source validation and state helpers |
 | `nyx-static/assets/` | Original test MP4 and subtitles |
 | `tests/` | Node tests for important validation paths |
+
+The original seven local poster pairs can be refreshed from TVmaze with
+`node scripts/cache-anvil-posters.mjs` when building the site. This requires
+ImageMagick and internet access on the development computer, not on the viewer's
+Chromebook. The site itself never makes those TVmaze image requests.
 
 ## Provenance and permissions
 
