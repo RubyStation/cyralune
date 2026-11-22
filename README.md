@@ -1,0 +1,90 @@
+# Cyralune — The Lunar Cinema
+
+An independent, buildless, single-website media library. No Anvil account,
+server module, database subscription, or paid hosting is required to run the
+static frontend.
+
+## Included
+
+- Home, Anime, Movies, TV, Websites, My List, and Settings in one responsive site.
+- AniList-powered title discovery, ratings, and official/promotional cover art.
+- A built-in **Jujutsu Kaisen Season 1** title/episode listing (metadata only).
+- An original short demo MP4 and caption file so you can test the player.
+- A player for your own local MP4/WebM files or HTTPS MP4/HLS sources; optional
+  HLS.js loading; sandboxed third-party embeds when the provider permits it.
+- Per-episode source priority and fallback when a native stream fails.
+- Native video controls for audio volume, subtitles, and fullscreen.
+- Watch progress, favorites, sources, and websites saved in this browser.
+- JSON backup export/import. No source credentials should be stored here.
+
+**Not included:** Jujutsu Kaisen video files, a licensed anime-streaming API,
+the N7X VPN/relay, or a server that can proxy restricted sites. Being able to
+play a source depends on the source owner's permissions, your browser, and the
+network you use. This app does not defeat a Chromebook's web restrictions.
+
+## Run it
+
+The browser must serve JavaScript modules over HTTP(S), so don't double-click
+`index.html` as a `file:` URL. From the repository folder, run:
+
+```bash
+python3 -m http.server 8000 --directory dist
+```
+
+Then open **http://localhost:8000**. On Windows, `py -m http.server 8000
+--directory dist` works when Python is installed.
+
+To test playback: Home or Movies → **The Lunar Test Reel** → **Episode 1**.
+The bundled demo is an original test clip, not a JJK episode.
+
+For JJK: Anime → search Jujutsu Kaisen → select an episode → Manage sources
+or choose a video file you already own and are permitted to use.
+
+## Put Cyralune on GitHub
+
+1. In your GitHub account, make a **new private repository** named `cyralune`.
+2. Extract this project. Upload `dist/`, `tests/`, `README.md`, and
+   `package.json` into that repository (or use Git locally).
+3. Keep it **private**. A private GitHub repository stores code but does not by
+   itself provide a private, accessible website. Hosting is a separate choice.
+4. For an eventual static host, set its publish directory to `dist/`.
+
+The site itself needs no backend, but anime discovery, streaming, and HLS.js
+load external resources and are subject to the respective providers' limits
+and rules. The external HLS library is optional; without it native MP4 still
+works and HLS works only in browsers with built-in HLS support.
+
+## Development
+
+```bash
+npm test
+npm run check
+```
+
+Code layout:
+
+| Path | Role |
+| --- | --- |
+| `dist/index.html` | Interface and player dialogs |
+| `dist/styles.css` | Lunar theme and responsive layouts |
+| `dist/app.js` | Catalog, pages, playback, progress, backups |
+| `dist/core.js` | Source validation and state helpers |
+| `dist/assets/` | Original test MP4 and subtitles |
+| `tests/` | Node tests for important validation paths |
+
+## Provenance and permissions
+
+The user's N7X code references informed architectural research, but this
+project is independently implemented; it does not bundle or use N7X's private
+networking or third-party video APIs. When you have separate permission to use
+specific sources, add their approved HTTPS URLs through Cyralune's interface.
+
+Cover images and catalog metadata belong to their respective owners/providers.
+This repository contains no generated replacement anime posters.
+
+## Privacy notes
+
+The repository should not contain passwords, API credentials, signed playback
+URLs, school login tokens, or personal browsing exports. Sources added in the
+interface are stored only in that browser's local storage and exported backups.
+Browser local storage is not encrypted; use the backup feature carefully.
