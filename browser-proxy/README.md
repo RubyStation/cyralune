@@ -10,11 +10,11 @@ Requires **Node.js 20 or later**, npm, and network access for one-time dependenc
 
 ```sh
 cd browser-proxy
-npm install
+npm ci --ignore-scripts --allow-remote=root
 npm start
 ```
 
-Use `npm ci` instead of `npm install` when repeating setup after the first successful install; the lockfile pins the tested dependency versions.
+The Scramjet package used by the upstream sample is a version-pinned tarball from Mercury Workshop's GitHub releases. New npm versions block URL dependencies by default; `--allow-remote=root` opts in **only for URL dependencies explicitly listed in this project**, not globally. `--ignore-scripts` avoids executing dependency install scripts. The lockfile pins the tested versions.
 
 Open `http://localhost:8789` in a modern desktop browser. The server binds only to `127.0.0.1` by default. Enter `https://example.com` and press Go. If the browser disallows service workers, the relay cannot operate. In particular, a restricted Chromebook may not permit these prerequisites.
 
@@ -27,6 +27,18 @@ LISTEN_HOST=0.0.0.0 PORT=8789 PUBLIC_ORIGIN=https://your-actual-domain.example P
 ```
 
 Replace the example domain and token. Never commit real tokens to GitHub. Configure the HTTPS reverse proxy to forward WebSocket upgrades to `/wisp/` as well as ordinary requests. The login page sets a six-hour HttpOnly, SameSite=Strict session cookie. There is an in-memory limit of five unsuccessful logins per IP per 15 minutes. The backend checks the request origin on WebSocket upgrades; the Wisp library disables UDP, direct IP destinations, private/loopback IPs, and non-web ports, and caps concurrent streams. **These are basic defenses, not a comprehensive security audit.** Apply access restrictions and operational monitoring before public use.
+
+### Temporary Google Cloud Shell test
+
+Cloud Shell Web Preview can expose port 8080 on an HTTPS address tied to your Google account. It is **temporary testing only**, and its proxy may not pass every WebSocket feature. After installing dependencies, in the same Cloud Shell terminal:
+
+```sh
+export PROXY_ACCESS_TOKEN="$(openssl rand -hex 24)"
+printf 'Private login token: %s\n' "$PROXY_ACCESS_TOKEN"
+LISTEN_HOST=0.0.0.0 PORT=8080 PUBLIC_ORIGIN="https://8080-${WEB_HOST}" npm start
+```
+
+Keep the printed token private. Select **Web Preview → Preview on port 8080**, sign in with that token, and first try `https://example.com`. Use Ctrl+C to stop the process. Google ends inactive Cloud Shell sessions, so this is not a 24/7 server.
 
 The default local mode has no password because it only listens on the loopback interface. Do not make it public without the token and HTTPS. Browser page content and destination URLs are visible to the relay host; it is not an anonymity service.
 

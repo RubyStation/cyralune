@@ -2,8 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { request as httpRequest } from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket from 'ws';
+
+function rawStatus(origin, rawPath) {
+  return new Promise((resolve, reject) => {
+    const request = httpRequest(new URL(origin), { path: rawPath }, (response) => {
+      response.resume();
+      resolve(response.statusCode);
+    });
+    request.on('error', reject);
+    request.end();
+  });
+}
 
 async function withServer(token, action) {
   const port = 22000 + Math.floor(Math.random() * 10000);
@@ -50,6 +62,12 @@ test('remote token mode blocks anonymous files and websocket upgrades', { timeou
     const anonymous = await fetch(origin, { redirect: 'manual' });
     assert.equal(anonymous.status, 302);
     assert.equal(anonymous.headers.get('location'), '/login');
+
+    // Send raw paths: fetch(URL) would normalize the dot segments before dispatch.
+    for (const unsafePath of ['/prefix/../sw.js', '/prefix/%2e%2e/sw.js', '/./sw.js', '//sw.js']) {
+      const code = await rawStatus(origin, unsafePath);
+      assert.notEqual(code, 200, `Anonymous static file exposed through ${unsafePath}`);
+    }
 
     const badOrigin = await fetch(`${origin}/login`, {
       method: 'POST', headers: { Origin: 'https://attacker.example', 'Content-Type': 'application/x-www-form-urlencoded' },
