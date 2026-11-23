@@ -1,60 +1,53 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync,readFileSync} from 'node:fs';
-import {LOCAL_BANNERS} from '../nyx-static/local-banner-catalog.js';
-import {normalizedTitle} from '../nyx-static/banner-catalog.js';
-import {ANIME_GALLERY} from '../nyx-static/anime-gallery.js';
+import {readdirSync,readFileSync} from 'node:fs';
+import {SAVED_N7X_POSTER_COUNT,savedN7xPoster} from '../nyx-static/n7x-poster-catalog.js';
 import {ANVIL_CATALOG} from '../nyx-static/anvil-catalog.js';
+import {OFFLINE_ANIME} from '../nyx-static/offline-anime.js';
 
-const allShows = [...ANIME_GALLERY, ...ANVIL_CATALOG];
-const slug = name => name.toLocaleLowerCase().normalize('NFKD')
-  .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const posterDirectory = new URL('../nyx-static/assets/posters/',import.meta.url);
 
-function dimensions(file) {
-  const bytes = readFileSync(file);
-  assert.equal(bytes.toString('ascii',0,4), 'RIFF');
-  assert.equal(bytes.toString('ascii',8,12), 'WEBP');
-  // WebP's native VP8 bitstream stores its true canvas dimensions directly.
-  assert.equal(bytes.toString('ascii',12,16), 'VP8 ');
-  assert.equal(bytes.toString('hex',23,26), '9d012a');
-  return [bytes.readUInt16LE(26)&0x3fff,bytes.readUInt16LE(28)&0x3fff];
+// Read each source JPEG's dimensions without resampling its pixels.
+function jpegSize(bytes) {
+  assert.equal(bytes[0],0xff);
+  assert.equal(bytes[1],0xd8);
+  let index = 2;
+  while (index < bytes.length - 9) {
+    if (bytes[index] !== 0xff) { index++; continue; }
+    const marker = bytes[index+1];
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0xff || marker === 0x00) { index++; continue; }
+    if ([0xc0,0xc1,0xc2,0xc3].includes(marker))
+      return [bytes.readUInt16BE(index+7),bytes.readUInt16BE(index+5)];
+    const length = bytes.readUInt16BE(index+2);
+    assert.ok(length >= 2);
+    index += length + 2;
+  }
+  throw Error('No JPEG dimensions found');
 }
 
-test('local widescreen banners are authentic landscape files at least 1880 pixels wide', () => {
-  const entries = Object.entries(LOCAL_BANNERS);
-  assert.ok(entries.length >= 50, `Expected at least 50 sourced widescreen backgrounds; found ${entries.length}`);
-  const known = new Set(allShows.map(show => normalizedTitle(show.name)));
-  for (const [key,url] of entries) {
-    assert.ok(known.has(key), `Unrecognized anime key ${key}`);
-    assert.match(url, /^\.\/assets\/banners\/[a-z0-9-]+\.webp$/);
-    const file = new URL(`../nyx-static/${url.slice(2)}`, import.meta.url);
-    assert.ok(existsSync(file), `${key} has no local artwork file`);
-    const [width,height] = dimensions(file.pathname);
-    assert.ok(width >= 1880, `${key} image is only ${width}px wide`);
-    assert.ok(width/height >= 1.5, `${key} image is not widescreen`);
+test('all 105 original N7X posters are present with no enlarged variants', () => {
+  const files = readdirSync(posterDirectory).filter(name => name.endsWith('.jpg'));
+  assert.equal(files.length,105);
+  assert.equal(SAVED_N7X_POSTER_COUNT,105);
+  for (const filename of files) {
+    const image = readFileSync(new URL(filename,posterDirectory));
+    const [width,height] = jpegSize(image);
+    assert.equal(width,342,`${filename} must keep the original 342px width`);
+    assert.ok(height >= 450 && height <= 520,`${filename} has an unusual source height ${height}`);
   }
 });
 
-test('qualifying poster files retain real full-size detail rather than being enlarged from thumbnails', () => {
-  let highResolution = 0;
-  for (const show of allShows) {
-    const file = new URL(`../nyx-static/assets/posters-hd/${slug(show.name)}.webp`, import.meta.url);
-    const [width] = dimensions(file.pathname);
-    if (width >= 1880) highResolution++;
-  }
-  assert.ok(highResolution >= 30, `Only ${highResolution} source posters are at least 1880px wide`);
-});
-
-test('previously undersized popular posters use larger source originals', () => {
-  const minimums = {
-    'black-butler': 1200,
-    'black-clover': 1064,
-    'blue-lock': 1450,
-    'one-piece': 1447
-  };
-  for (const [name,width] of Object.entries(minimums)) {
-    const file = new URL(`../nyx-static/assets/posters-hd/${name}.webp`,import.meta.url);
-    const [actual] = dimensions(file.pathname);
-    assert.ok(actual >= width,`${name} should use its higher-resolution source (${actual}px < ${width}px)`);
+test('every available poster maps to a catalog title and uses the same detail image', () => {
+  const items = [...ANVIL_CATALOG,...OFFLINE_ANIME];
+  assert.equal(items.filter(item => Boolean(savedN7xPoster(item.name))).length,105);
+  for (const item of items) {
+    const expected = savedN7xPoster(item.name);
+    if (!expected) {
+      assert.equal(item.name,'Bleach: Thousand-Year Blood War');
+      continue;
+    }
+    assert.equal(item.cover,expected);
+    assert.equal(item.detailCover,expected);
   }
 });

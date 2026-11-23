@@ -22,11 +22,14 @@ test('featured Watch opens the existing episode player and poster cards open det
   assert.doesNotMatch(app,/anime-episode-badge/);
 });
 
-test('featured and tile images crop without stretching and the poster grid adapts to mobile', () => {
+test('featured artwork stays wide while poster tiles fit without upscaling', () => {
   assert.match(theme,/\.anime-feature-image\s*\{[^}]*object-fit:cover/s);
-  assert.match(theme,/\.anime-poster-card img\s*\{[^}]*object-fit:cover/s);
-  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
-  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(theme,/\.anime-poster-card img\s*\{[^}]*object-fit:contain/s);
+  assert.match(theme,/\.anime-poster-card\s*\{[^}]*aspect-ratio:2 \/ 3/s);
+  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(auto-fill,minmax\(138px,160px\)\)/);
+  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,160px\)\)/);
+  assert.match(app,/displayedAnime = items\.filter\(item => item\.type === 'anime'\)/);
+  assert.doesNotMatch(app,/displayedAnime = visibleAnime\(/);
 });
 
 test('detail window keeps the classic season and episode dropdowns without episode cards', () => {

@@ -21,16 +21,21 @@ test('at least 40 anime have credited posters and named episodes available offli
   for (const item of enriched) {
     assert.match(item.cover, /^\.\/assets\/posters\/[a-z0-9-]+\.jpg$/);
     assert.ok(existsSync(new URL(`../nyx-static/${item.cover.slice(2)}`, import.meta.url)));
-    assert.match(item.detailCover, /^\.\/assets\/posters-hd\/[a-z0-9-]+\.webp$/);
-    const hdPoster = readFileSync(new URL(`../nyx-static/${item.detailCover.slice(2)}`, import.meta.url));
-    assert.equal(hdPoster.toString('ascii', 0, 4), 'RIFF');
-    assert.equal(hdPoster.toString('ascii', 8, 12), 'WEBP');
-    assert.ok(hdPoster.length > 1000);
+    assert.equal(item.detailCover, item.cover);
+    const poster = readFileSync(new URL(`../nyx-static/${item.cover.slice(2)}`, import.meta.url));
+    assert.equal(poster[0], 0xff);
+    assert.equal(poster[1], 0xd8);
+    assert.ok(poster.length > 1000);
     assert.ok(item.sourceUrl.startsWith('https://www.tvmaze.com/shows/'));
     assert.equal(item.episodes, item.episodeTitles.length);
     assert.ok(item.episodes >= 1 && item.episodes <= 300);
     assert.ok(item.episodeTitles.every(title => typeof title === 'string' && title.trim().length > 0));
   }
+});
+
+test('all but the unlisted Bleach continuation have an original-size N7X poster', () => {
+  assert.deepEqual(OFFLINE_ANIME.filter(item => !item.cover).map(item => item.name),
+    ['Bleach: Thousand-Year Blood War']);
 });
 
 test('offline entries remain searchable with no network', () => {

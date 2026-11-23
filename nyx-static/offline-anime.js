@@ -2,6 +2,7 @@
 // Verified TVmaze artwork and episode titles enrich matching titles; all others
 // remain searchable title-only entries. No streaming sources are added.
 import {ANIME_GALLERY} from './anime-gallery.js';
+import {savedN7xPoster} from './n7x-poster-catalog.js';
 const DISCOVERY_TITLES = [
   'Naruto', 'Naruto: Shippuden', 'Boruto: Naruto Next Generations',
   'Dragon Ball', 'Dragon Ball Z', 'Dragon Ball Super',
@@ -42,20 +43,20 @@ const galleryByName = new Map(ANIME_GALLERY.map(item => [item.name.toLocaleLower
 
 export const OFFLINE_ANIME = Object.freeze(DISCOVERY_TITLES.map(name => {
   const credited = galleryByName.get(name.toLocaleLowerCase());
+  const savedPoster = savedN7xPoster(name);
   return Object.freeze({
     id: `offline:${slug(name)}`, name, type: 'anime',
     format: credited ? 'TV Anime · episode guide' : 'Offline discovery',
     episodes: credited?.episodeTitles.length || 0,
     episodeTitles: credited?.episodeTitles || [],
-    // Serve TVmaze-approved cached artwork from our own allowed Firebase domain.
-    cover: credited ? `./assets/posters/${slug(name)}.jpg` : '',
-    // High-density displays and the details page use the source's original art,
-    // optimized as local WebP rather than enlarging the small gallery thumbnail.
-    detailCover: credited ? `./assets/posters-hd/${slug(name)}.webp` : '',
+    // The actual 342x513 N7X poster is bundled locally. Do not upscale it or
+    // substitute a widescreen banner in portrait slots.
+    cover: savedPoster,
+    detailCover: savedPoster,
     genre: credited?.genre || '', year: credited?.year || 0,
     sourceUrl: credited?.sourceUrl || '',
     officialUrl: credited?.officialUrl || '',
-    description: credited ? `Episode names and poster sourced from TVmaze (${credited.sourceTitle}). Streaming sources are not included.`
+    description: credited ? `Episode names sourced from TVmaze (${credited.sourceTitle}); poster artwork saved from N7X/TMDB. Streaming sources are not included.`
       : 'Title-only discovery entry. Episode details and video sources are not included.'
   });
 }));

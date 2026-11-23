@@ -1,5 +1,5 @@
 // The seven-title catalog carried over from the original Anvil Anime Center.
-// All metadata is bundled locally; credited posters are cached from TVmaze.
+// All metadata is bundled locally; N7X/TMDB posters retain their original size.
 // Video streams and the private Anvil source database are intentionally excluded.
 export const JJK_EPISODES = Object.freeze([
   'Ryomen Sukuna', 'For Myself', 'Girl of Steel', 'Curse Womb Must Die',
@@ -36,7 +36,7 @@ export const ANVIL_CATALOG = Object.freeze([
     episodes: JJK_EPISODES.length, episodeTitles: JJK_EPISODES,
     description: 'Yuji Itadori enters the dangerous world of jujutsu sorcerers and curses.',
     cover: './assets/posters/jujutsu-kaisen.jpg',
-    detailCover: './assets/posters-hd/jujutsu-kaisen.webp',
+    detailCover: './assets/posters/jujutsu-kaisen.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/48450/jujutsu-kaisen'
   },
   {
@@ -44,7 +44,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Adventure · Fantasy', type: 'anime', format: 'TV',
     description: 'A journey through the world of Pokémon, filled with discovery and friendship.',
     cover: './assets/posters/pokemon.jpg',
-    detailCover: './assets/posters-hd/pokemon.webp',
+    detailCover: './assets/posters/pokemon.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/590/pokemon'
   },
   {
@@ -52,7 +52,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Adventure · Fantasy', type: 'anime', format: 'TV',
     description: 'Monkey D. Luffy and his crew sail the Grand Line in search of the legendary treasure.',
     cover: './assets/posters/one-piece.jpg',
-    detailCover: './assets/posters-hd/one-piece.webp',
+    detailCover: './assets/posters/one-piece.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/1505/one-piece'
   },
   {
@@ -60,7 +60,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Comedy · Sci-Fi', type: 'anime', format: 'TV',
     description: 'A futuristic robotic cat brings remarkable gadgets into Nobita’s everyday life.',
     cover: './assets/posters/doraemon.jpg',
-    detailCover: './assets/posters-hd/doraemon.webp',
+    detailCover: './assets/posters/doraemon.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/55578/doraemon'
   },
   {
@@ -68,7 +68,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Comedy · Slice of Life', type: 'anime', format: 'TV',
     description: 'The amusing everyday adventures of Maruko, her family, and her classmates.',
     cover: './assets/posters/chibi-maruko-chan.jpg',
-    detailCover: './assets/posters-hd/chibi-maruko-chan.webp',
+    detailCover: './assets/posters/chibi-maruko-chan.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/22517/chibi-maruko-chan'
   },
   {
@@ -76,7 +76,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Mystery · Adventure', type: 'anime', format: 'TV',
     description: 'A brilliant young detective tackles baffling mysteries while hiding his identity.',
     cover: './assets/posters/detective-conan.jpg',
-    detailCover: './assets/posters-hd/detective-conan.webp',
+    detailCover: './assets/posters/detective-conan.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/5429/detective-conan'
   },
   {
@@ -84,7 +84,7 @@ export const ANVIL_CATALOG = Object.freeze([
     genre: 'Comedy · Adventure', type: 'anime', format: 'TV',
     description: 'Young ninja students navigate friendship, training, and mischievous adventures.',
     cover: './assets/posters/ninja-boy-rantaro.jpg',
-    detailCover: './assets/posters-hd/ninja-boy-rantaro.webp',
+    detailCover: './assets/posters/ninja-boy-rantaro.jpg',
     sourceUrl: 'https://www.tvmaze.com/shows/88345/nintama-rantaro'
   }
 ]);

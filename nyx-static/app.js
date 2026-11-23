@@ -2,7 +2,7 @@ import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSou
 import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
 import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
-import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache, visibleAnime} from './banner-catalog.js';
+import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache} from './banner-catalog.js';
 import {LOCAL_BANNERS} from './local-banner-catalog.js';
 import {VERIFIED_SEASONS} from './season-catalog.js';
 
@@ -60,10 +60,8 @@ function rememberWideBanner(name, url) {
 function heroArtwork(item) {
   if (!item || data.lowDataMode) return [];
   const banner = wideBanner(item);
-  const alternatives = [trustedCover(item.detailCover), trustedCover(item.cover)];
-  return [...new Set([banner, ...alternatives].filter(Boolean))].map(url => ({
-    url, portrait: url !== banner
-  }));
+  // Never stretch a 342px-wide poster into the cinematic banner slot.
+  return banner ? [{url: banner, portrait: false}] : [];
 }
 
 function findWideBanners(items) {
@@ -307,24 +305,18 @@ function renderAnime(items, {resetPage = false} = {}) {
   animeResults = items;
   findWideBanners(items);
   const offlineFallback = data.lowDataMode || bannerLookupUnavailable || Boolean(bannerWorker);
-  displayedAnime = visibleAnime(items, {offline:offlineFallback,hasBanner:item => Boolean(wideBanner(item))});
-  // Show available local poster artwork first when the network is restricted.
-  // Search results keep their natural relevance order.
-  if (!$('#anime-query').value.trim()) displayedAnime.sort((a,b) =>
-    Number(Boolean(trustedCover(b.detailCover) || trustedCover(b.cover))) -
-    Number(Boolean(trustedCover(a.detailCover) || trustedCover(a.cover))));
+  // Keep every local title in the original catalog order, even without a
+  // widescreen banner. This gives the complete collection real pages.
+  displayedAnime = items.filter(item => item.type === 'anime');
   renderAnimeFeature(items);
   if (resetPage) animePage = 1;
   const totalPages = Math.max(1, Math.ceil(displayedAnime.length / ANIME_PAGE_SIZE));
   animePage = Math.min(animePage, totalPages);
   const start = (animePage - 1) * ANIME_PAGE_SIZE;
   const visible = displayedAnime.slice(start, start + ANIME_PAGE_SIZE);
-  const emptyMessage = bannerLookupUnavailable ? 'The online artwork service is unavailable. Your saved anime library is still here; try a different search or retry banners later.'
-    : pendingWideBanners.size || bannerWorker ? 'Finding widescreen artwork for the collection…'
-    : items.length ? 'No matching series have a verified wide banner yet. Titles without banners are hidden, not deleted.'
-    : 'No matching anime found. Try another title or genre.';
+  const emptyMessage = 'No matching anime found. Try another title or genre.';
   $('#anime-grid').innerHTML = visible.length ? visible.map(animePosterCard).join('') : `<div class="empty-state">${emptyMessage}</div>`;
-  $('#anime-count').textContent = offlineFallback ? `${displayedAnime.length} saved titles · offline` : `${displayedAnime.length} with banners`;
+  $('#anime-count').textContent = `${displayedAnime.length} titles · ${totalPages} page${totalPages === 1 ? '' : 's'}${offlineFallback ? ' · offline ready' : ''}`;
   $('#anime-pagination').hidden = totalPages === 1;
   $('#anime-page-info').textContent = `Page ${animePage} of ${totalPages}`;
   $('#anime-page-numbers').innerHTML = Array.from({length:totalPages}, (_, i) => {
@@ -379,7 +371,7 @@ async function loadAnime(search = '') {
     $('#anime-status').textContent = 'Low-Data Mode is on. Your saved anime library remains available without online discovery.';
     return;
   }
-  $('#anime-status').textContent = 'Checking for authentic widescreen banners and additional anime…';
+  $('#anime-status').textContent = 'Showing the saved poster collection while checking for additional anime…';
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
@@ -403,6 +395,10 @@ async function loadAnime(search = '') {
         cover:safeUrl(row.coverImage?.large || '') || '', banner,
         description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
       if (offline?.episodeTitles?.length) Object.assign(item, offline);
+      if (offline?.cover) {
+        item.cover = offline.cover;
+        item.detailCover = offline.detailCover;
+      }
       // Preserve the original Anvil IDs and JJK episode names.
       if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) catalog.set(item.id, item);
       return item;
@@ -413,7 +409,7 @@ async function loadAnime(search = '') {
     save();
     const items = localAnime(search);
     renderAnime(items);
-    $('#anime-status').textContent = 'Saved anime are ready. Checking widescreen banners; artwork filters apply only when the service is reachable.';
+    $('#anime-status').textContent = 'Saved anime are ready. Use the page numbers to browse the whole collection.';
   } catch (error) {
     if (request !== searchSerial) return;
     bannerLookupUnavailable = true;
