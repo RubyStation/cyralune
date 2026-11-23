@@ -22,12 +22,13 @@ test('featured Watch opens the existing episode player and poster cards open det
   assert.doesNotMatch(app,/anime-episode-badge/);
 });
 
-test('featured artwork stays wide while poster tiles fit without upscaling', () => {
+test('featured artwork stays wide while original poster art fills the normal-size grid without distortion', () => {
   assert.match(theme,/\.anime-feature-image\s*\{[^}]*object-fit:cover/s);
   assert.match(theme,/\.anime-poster-card img\s*\{[^}]*object-fit:contain/s);
   assert.match(theme,/\.anime-poster-card\s*\{[^}]*aspect-ratio:2 \/ 3/s);
-  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(auto-fill,minmax\(138px,160px\)\)/);
-  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,160px\)\)/);
+  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.doesNotMatch(theme,/\.anime-poster-card\s*\{[^}]*max-width:160px/s);
   assert.match(app,/displayedAnime = items\.filter\(item => item\.type === 'anime'\)/);
   assert.doesNotMatch(app,/displayedAnime = visibleAnime\(/);
 });
