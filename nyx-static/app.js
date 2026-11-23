@@ -216,9 +216,7 @@ function animePosterCard(item) {
 function renderAnimeFeature(items) {
   const container = $('#anime-feature');
   const featured = items.find(item => normalizedTitle(item.name) === 'jujutsukaisen');
-  // Use the chosen JJK scene only for the Anime Center's featured banner.
-  // The existing series banner and portrait poster remain unchanged.
-  const banner = featured && './assets/banners/jujutsu-kaisen-featured.jpg';
+  const banner = featured && wideBanner(featured);
   // The featured artwork is a browsing highlight, not a search result or a
   // reason to download images while Low-Data Mode is active.
   if (!featured || !banner || data.lowDataMode || $('#anime-query').value.trim()) {
