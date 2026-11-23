@@ -204,8 +204,9 @@ function animePosterCard(item) {
   const name = escapeHtml(item.name);
   const thumbnail = data.lowDataMode ? '' : trustedCover(item.cover);
   const hd = data.lowDataMode ? '' : trustedCover(item.detailCover);
-  const image = hd || thumbnail;
-  const fallback = hd && thumbnail && hd !== thumbnail ? ` data-fallback="${escapeHtml(thumbnail)}"` : '';
+  // Portrait cards should use the portrait cover, not a cropped widescreen detail image.
+  const image = thumbnail || hd;
+  const fallback = thumbnail && hd && hd !== thumbnail ? ` data-fallback="${escapeHtml(hd)}"` : '';
   const episodeCount = Number.isInteger(item.episodes) && item.episodes > 0 ? item.episodes : 0;
   return `<button type="button" class="anime-poster-card" data-action="detail" data-id="${escapeHtml(item.id)}" aria-label="Open ${name}${episodeCount ? `, ${episodeCount} episodes` : ''}">
     <span class="anime-poster-placeholder" aria-hidden="true">${name}</span>
