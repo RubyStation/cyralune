@@ -12,7 +12,14 @@ export const JJK_EPISODES = Object.freeze([
   'Kyoto Sister School Exchange Event - Group Battle 3 -',
   'Sage', 'Black Flash', 'Nonstandard', 'Jujutsu Koshien',
   'The Origin of Blind Obedience', 'The Origin of Blind Obedience - 2 -',
-  'Accomplices'
+  'Accomplices',
+  'Hidden Inventory', 'Hidden Inventory, Part 2', 'Hidden Inventory, Part 3',
+  'Hidden Inventory, Part 4', 'Premature Death', "It's Like That",
+  'Evening Festival', 'The Shibuya Incident', 'The Shibuya Incident - Gate Open',
+  'Pandemonium', 'Summon', 'Dull Knife', 'Red Scale', 'Fluctuations',
+  'Fluctuations II', 'Thunderclap', 'Thunderclap II', 'Right and Wrong',
+  'Right and Wrong II', 'Right and Wrong III', 'Transformation',
+  'Transformation II', 'The Shibuya Incident - Gate Closed'
 ]);
 
 export const ANVIL_CATALOG = Object.freeze([

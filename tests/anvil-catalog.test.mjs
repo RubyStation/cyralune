@@ -11,12 +11,14 @@ test('the complete seven-title Anvil library is available without an API', () =>
   assert.equal(searchAnvilCatalog('').length, 7);
 });
 
-test('Jujutsu Kaisen keeps the original Firebase ID and 24 Anvil episode names', () => {
+test('Jujutsu Kaisen keeps the original Firebase ID and season-one episode names while adding season two', () => {
   assert.equal(ANVIL_CATALOG[0].id, 'anime:113415');
-  assert.equal(ANVIL_CATALOG[0].episodes, 24);
-  assert.equal(JJK_EPISODES.length, 24);
+  assert.equal(ANVIL_CATALOG[0].episodes, 47);
+  assert.equal(JJK_EPISODES.length, 47);
   assert.equal(JJK_EPISODES[0], 'Ryomen Sukuna');
   assert.equal(JJK_EPISODES[23], 'Accomplices');
+  assert.equal(JJK_EPISODES[24], 'Hidden Inventory');
+  assert.equal(JJK_EPISODES[46], 'The Shibuya Incident - Gate Closed');
 });
 
 test('built-in search works by name, genre, and year even offline', () => {

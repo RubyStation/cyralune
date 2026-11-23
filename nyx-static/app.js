@@ -4,6 +4,7 @@ import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
 import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache, visibleAnime} from './banner-catalog.js';
 import {LOCAL_BANNERS} from './local-banner-catalog.js';
+import {VERIFIED_SEASONS} from './season-catalog.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -487,9 +488,19 @@ function renderMediaDetail() {
   renderMediaEpisodeSelector();
 }
 
+function knownSeasons(item) {
+  if (Array.isArray(item.seasons) && item.seasons.length) return item.seasons;
+  const verified = VERIFIED_SEASONS[normalizedTitle(item.name)];
+  if (!Array.isArray(verified) || !verified.length) return [];
+  const count = item.episodes;
+  const included = verified.filter(group => group.start <= count)
+    .map(group => ({...group,end:Math.min(group.end,count)}));
+  return included.at(-1)?.end === count ? included : [];
+}
+
 function renderMediaEpisodeSelector() {
   if (!selected) return;
-  const groups = episodeGroups(selected.episodes, selected.seasons);
+  const groups = episodeGroups(selected.episodes, knownSeasons(selected));
   const available = groups.length > 0;
   $('#media-episode-selector').hidden = !available;
   $('#media-episode-mark').hidden = !available;
@@ -505,12 +516,7 @@ function renderMediaEpisodeSelector() {
   const group = groups.find(item => selectedEpisode >= item.start && selectedEpisode <= item.end) || groups[0];
   $('#media-season').innerHTML = groups.map(item => `<option value="${item.start}">${escapeHtml(item.label)}</option>`).join('');
   $('#media-season').value = String(group.start);
-  $('#media-episode').innerHTML = Array.from({length:group.end-group.start+1},(_,index) => {
-    const number = group.start + index;
-    const title = selected.episodeTitles?.[number-1];
-    return `<option value="${number}">${number}. ${escapeHtml(title || `Episode ${number}`)}</option>`;
-  }).join('');
-  $('#media-episode').value = String(selectedEpisode);
+  $('#media-season-count').textContent = `${group.end-group.start+1} episodes · scroll below`;
   const title = selected.episodeTitles?.[selectedEpisode-1];
   $('#media-episode-caption').textContent = title ? `Episode ${selectedEpisode} · ${title}` : `Episode ${selectedEpisode} of ${selected.episodes}`;
   const watched = Array.from({length:selected.episodes},(_,index) => episodeMark(progressKey(selected.id,index+1)))
@@ -921,16 +927,10 @@ $('#detail-back').addEventListener('click', () => {
 $('#media-detail-close').addEventListener('click', () => $('#media-detail-dialog').close());
 $('#media-season').addEventListener('change', event => {
   if (!selected) return;
-  const group = episodeGroups(selected.episodes, selected.seasons)
+  const group = episodeGroups(selected.episodes, knownSeasons(selected))
     .find(item => item.start === Number(event.target.value));
   if (!group) return;
   selectedEpisode = group.start;
-  renderMediaEpisodeSelector();
-});
-$('#media-episode').addEventListener('change', event => {
-  const episode = Number(event.target.value);
-  if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
-  selectedEpisode = episode;
   renderMediaEpisodeSelector();
 });
 $('#media-episode-grid').addEventListener('click', event => {
@@ -949,7 +949,6 @@ $('#media-episode-grid').addEventListener('click', event => {
   }
   renderMediaEpisodeSelector();
 });
-$('#media-play').addEventListener('click', () => openPlayer(selectedEpisode));
 $('#media-episode-mark').addEventListener('click', () => {
   if (!selected || selectedEpisode < 1 || selectedEpisode > selected.episodes) return;
   const key = currentKey(), previous = episodeMark(key);

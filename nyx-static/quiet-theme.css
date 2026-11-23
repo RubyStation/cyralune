@@ -16,6 +16,8 @@ body {
     radial-gradient(ellipse 54% 32% at 0% 90%,#22293440,transparent),var(--bg);
 }
 body:before {opacity:.055}
+/* The old grain texture left distracting fine lines over the artwork. */
+body:before {display:none}
 
 .rail {
   background: #101319ed;
@@ -131,9 +133,10 @@ footer span {color:#a9adb5}
 .media-detail-section-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:13px}
 .media-detail-section-heading h3 {font-size:17px;font-weight:620;margin:0}
 .media-detail-section-heading span {font-size:12px}
-.media-episode-selector {display:grid;grid-template-columns:minmax(150px,1fr) minmax(190px,1.5fr) 47px;align-items:end;gap:10px}
+.media-episode-selector {display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .media-episode-selector[hidden] {display:none}
-.media-episode-selector label {display:grid;min-width:0;gap:6px;color:#a7abb4;font-size:12px}
+.media-episode-selector label {display:grid;flex:0 1 360px;min-width:180px;gap:6px;color:#a7abb4;font-size:12px}
+.media-season-count {font-size:13px;color:#aeb8ca;padding:0 0 12px}
 .media-episode-selector select {
   width:100%;min-height:43px;padding:0 12px;border-radius:10px;border:1px solid #ffffff28;
   background:#1c2028;color:#edf0f2;font-size:13px;color-scheme:dark;
@@ -143,8 +146,8 @@ footer span {color:#a9adb5}
 .media-play:hover {background:#f2f3f5}
 .media-episode-caption {font-size:13px;line-height:1.55;color:#b9bec7;margin:12px 0 0}
 .media-episode-grid {
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
-  max-height:414px;overflow-y:auto;overscroll-behavior:contain;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+  max-height:min(60dvh,600px);overflow-y:auto;overscroll-behavior:contain;
   margin:15px 0 21px;padding:2px 5px 6px 2px;scrollbar-color:#4c5563 #15191f;
 }
 .media-episode-card {
@@ -159,7 +162,7 @@ footer span {color:#a9adb5}
   color:#eef0f4;background:none;border:0;text-align:left;
 }
 .media-episode-thumb {
-  position:relative;width:96px;aspect-ratio:1.35;flex:none;overflow:hidden;
+  position:relative;width:150px;aspect-ratio:16/9;flex:none;overflow:hidden;
   border-radius:8px;background:radial-gradient(circle at 50% 20%,#455267,#202733 85%);
 }
 .media-episode-thumb img {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 24%}
@@ -367,14 +370,15 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   #anime-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:700px) {
-  .media-episode-grid {grid-template-columns:1fr;max-height:360px;gap:8px}
-  .media-episode-thumb {width:86px}
+  .media-episode-grid {grid-template-columns:1fr;max-height:55dvh;gap:8px}
+  .media-episode-thumb {width:108px}
   .media-detail-dialog {width:calc(100vw - 18px);max-height:93dvh;border-radius:15px}
   .media-detail-hero {height:285px}
   .media-detail-hero-copy {left:19px;bottom:20px;max-width:80%}
   .media-detail-hero-copy h2 {font-size:clamp(29px,7vw,42px)}
   .media-detail-body {padding:19px}
-  .media-episode-selector {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 44px;gap:6px}
+  .media-episode-selector {gap:6px}
+  .media-episode-selector label {flex:1 1 100%}
   .media-episode-selector select {font-size:11px;padding:0 6px}
   .media-detail-info {grid-template-columns:1fr;gap:14px}
   .media-detail-facts {grid-template-columns:repeat(3,minmax(0,1fr))}

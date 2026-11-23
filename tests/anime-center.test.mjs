@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {VERIFIED_SEASONS} from '../nyx-static/season-catalog.js';
 
 const page = readFileSync(new URL('../nyx-static/studies.html',import.meta.url),'utf8');
 const app = readFileSync(new URL('../nyx-static/app.js',import.meta.url),'utf8');
@@ -31,8 +32,17 @@ test('featured and tile images crop without stretching and the poster grid adapt
 test('detail window has visual episode cards, range navigation and watch-state controls', () => {
   assert.match(page,/id="media-episode-grid"/);
   assert.match(page,/id="media-season"/);
+  assert.match(page,/id="media-season-count"/);
+  assert.doesNotMatch(page,/id="media-episode"/);
   assert.match(app,/data-media-select="\$\{episode\}"/);
   assert.match(app,/data-media-play="\$\{episode\}"/);
   assert.match(app,/data-media-mark="\$\{episode\}"/);
-  assert.match(theme,/\.media-episode-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);
+  assert.match(theme,/\.media-episode-grid\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)/s);
+  assert.match(theme,/max-height:min\(60dvh,600px\)/);
+  assert.ok(Object.keys(VERIFIED_SEASONS).length >= 50);
+  assert.equal(VERIFIED_SEASONS.attackontitan[1].name,'Season 2');
+});
+
+test('artwork no longer uses the global grain overlay', () => {
+  assert.match(theme,/body:before \{display:none\}/);
 });
