@@ -480,11 +480,12 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
 }
 .anime-poster-card img {
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  object-position:center top;image-rendering:auto;z-index:0;
+  object-position:center center;image-rendering:auto;z-index:0;
+  display:block;transform:translateZ(0);backface-visibility:hidden;
 }
 .anime-poster-card:after {
   content:"";position:absolute;inset:25% 0 0;z-index:1;pointer-events:none;
-  background:linear-gradient(0deg,#02040bdc 0%,#02040b32 30%,transparent 66%);
+  background:linear-gradient(to top,rgba(2,4,11,.82),rgba(2,4,11,.20) 42%,transparent 76%);
 }
 .anime-poster-placeholder {
   position:absolute;inset:0;display:grid;place-items:center;text-align:center;
