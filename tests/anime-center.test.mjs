@@ -27,3 +27,12 @@ test('featured and tile images crop without stretching and the poster grid adapt
   assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('detail window has visual episode cards, range navigation and watch-state controls', () => {
+  assert.match(page,/id="media-episode-grid"/);
+  assert.match(page,/id="media-season"/);
+  assert.match(app,/data-media-select="\$\{episode\}"/);
+  assert.match(app,/data-media-play="\$\{episode\}"/);
+  assert.match(app,/data-media-mark="\$\{episode\}"/);
+  assert.match(theme,/\.media-episode-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);
+});

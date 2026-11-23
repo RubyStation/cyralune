@@ -44,3 +44,17 @@ test('qualifying poster files retain real full-size detail rather than being enl
   }
   assert.ok(highResolution >= 30, `Only ${highResolution} source posters are at least 1880px wide`);
 });
+
+test('previously undersized popular posters use larger source originals', () => {
+  const minimums = {
+    'black-butler': 1200,
+    'black-clover': 1064,
+    'blue-lock': 1450,
+    'one-piece': 1447
+  };
+  for (const [name,width] of Object.entries(minimums)) {
+    const file = new URL(`../nyx-static/assets/posters-hd/${name}.webp`,import.meta.url);
+    const [actual] = dimensions(file.pathname);
+    assert.ok(actual >= width,`${name} should use its higher-resolution source (${actual}px < ${width}px)`);
+  }
+});

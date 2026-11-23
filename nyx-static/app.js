@@ -275,7 +275,7 @@ document.addEventListener('error', event => {
     }
     return;
   }
-  if (!img.matches?.('.poster img, .detail-poster img, .anime-poster-card img, .anime-feature-image')) return;
+  if (!img.matches?.('.poster img, .detail-poster img, .anime-poster-card img, .anime-feature-image, .media-episode-thumb img')) return;
   if (img.dataset.fallback) {
     const fallback = img.dataset.fallback;
     img.removeAttribute('data-fallback');
@@ -493,7 +493,9 @@ function renderMediaEpisodeSelector() {
   const available = groups.length > 0;
   $('#media-episode-selector').hidden = !available;
   $('#media-episode-mark').hidden = !available;
+  $('#media-episode-grid').hidden = !available;
   if (!available) {
+    $('#media-episode-grid').replaceChildren();
     $('#media-episode-caption').textContent = 'Episode information is not available for this title yet.';
     $('#media-episode-progress').textContent = '';
     $('#media-source-note').textContent = 'Add episode information before selecting a video.';
@@ -521,6 +523,35 @@ function renderMediaEpisodeSelector() {
   $('#media-source-note').textContent = sources
     ? `${sources} available playback source${sources === 1 ? '' : 's'} for this episode. You can also choose a local video file.`
     : 'No video source linked to this episode yet. Select Play to add a permitted source or choose a video from your device.';
+  const poster = data.lowDataMode ? '' : trustedCover(selected.detailCover) || trustedCover(selected.cover);
+  const smallPoster = data.lowDataMode ? '' : trustedCover(selected.cover);
+  const posterFallback = poster && smallPoster && poster !== smallPoster ? ` data-fallback="${escapeHtml(smallPoster)}"` : '';
+  $('#media-episode-grid').innerHTML = Array.from({length:group.end-group.start+1},(_,index) => {
+    const episode = group.start + index;
+    const key = progressKey(selected.id, episode);
+    const mark = episodeMark(key);
+    const saved = data.progress[key];
+    const percent = Number.isFinite(saved?.time) && Number.isFinite(saved?.duration) && saved.duration > 0
+      ? Math.max(0, Math.min(100, Math.round(saved.time / saved.duration * 100))) : 0;
+    const title = escapeHtml(selected.episodeTitles?.[episode-1] || `Episode ${episode}`);
+    const sourceCount = availableSources(selected,episode).length;
+    const state = mark === 'watched' ? 'Watched' : mark === 'skipped' ? 'Skipped' : saved?.time > 0 ? 'Continue watching' : 'Not started';
+    return `<div class="media-episode-card is-${mark}${selectedEpisode === episode ? ' is-selected' : ''}">
+      <button type="button" class="media-episode-pick" data-media-select="${episode}" aria-label="Select episode ${episode}: ${title}" aria-pressed="${selectedEpisode === episode}">
+        <span class="media-episode-thumb">
+          ${poster ? `<img src="${escapeHtml(poster)}"${posterFallback} alt="" loading="lazy" decoding="async">` : ''}
+          <span class="media-episode-number">${String(episode).padStart(2,'0')}</span>
+        </span>
+        <span class="media-episode-summary"><strong>${title}</strong><small>${state}${sourceCount ? ` · ${sourceCount} source${sourceCount === 1 ? '' : 's'}` : ''}</small>
+          ${percent > 0 && percent < 100 ? `<span class="media-episode-track"><span style="width:${percent}%"></span></span>` : ''}
+        </span>
+      </button>
+      <div class="media-episode-card-actions">
+        <button type="button" data-media-play="${episode}" class="media-episode-play" aria-label="Open player for episode ${episode}" title="Open player">▶</button>
+        <button type="button" data-media-mark="${episode}" class="media-episode-toggle is-${mark}" aria-label="Change watched status for episode ${episode}; currently ${state}" title="${state}">${mark === 'watched' ? '✓' : mark === 'skipped' ? '↷' : '○'}</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function episodeMark(key) {
@@ -900,6 +931,22 @@ $('#media-episode').addEventListener('change', event => {
   const episode = Number(event.target.value);
   if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
   selectedEpisode = episode;
+  renderMediaEpisodeSelector();
+});
+$('#media-episode-grid').addEventListener('click', event => {
+  if (!selected) return;
+  const play = event.target.closest('[data-media-play]');
+  const mark = event.target.closest('[data-media-mark]');
+  const pick = event.target.closest('[data-media-select]');
+  const episode = Number((play || mark || pick)?.dataset.mediaPlay || (mark || pick)?.dataset.mediaMark || pick?.dataset.mediaSelect);
+  if (!Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
+  selectedEpisode = episode;
+  if (play) { openPlayer(episode); return; }
+  if (mark) {
+    const key = progressKey(selected.id, episode), previous = episodeMark(key);
+    data.episodeMarks[key] = previous === 'watched' ? 'skipped' : previous === 'skipped' ? 'unwatched' : 'watched';
+    save(); renderEpisodes();
+  }
   renderMediaEpisodeSelector();
 });
 $('#media-play').addEventListener('click', () => openPlayer(selectedEpisode));

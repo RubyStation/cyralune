@@ -90,6 +90,8 @@ test('episode selector uses true seasons or accurate episode groups', () => {
     {start:1,end:2,label:'Opening arc'}, {start:3,end:4,label:'Second arc'}
   ]);
   assert.equal(episodeGroups(50,[{start:1,end:50},{start:25,end:50}]).length,3);
+  assert.equal(episodeGroups(1152).at(-1).end,1152);
+  assert.deepEqual(episodeGroups(2001),[]);
   assert.deepEqual(episodeGroups(0),[]);
 });
 

@@ -91,7 +91,7 @@ export function restoreData(raw) {
     animeCache: Array.isArray(raw.animeCache) ? raw.animeCache.slice(0, 250).map(v => ({
       id: cleanText(v?.id, 100), name: cleanText(v?.name, 120), type: 'anime',
       format: cleanText(v?.format, 30), genre: cleanText(v?.genre, 100),
-      episodes: Number.isInteger(v?.episodes) && v.episodes > 0 ? Math.min(300, v.episodes) : 0,
+      episodes: Number.isInteger(v?.episodes) && v.episodes > 0 ? Math.min(2000, v.episodes) : 0,
       score: Number.isFinite(v?.score) ? Math.max(0, Math.min(100, v.score)) : 0,
       year: Number.isInteger(v?.year) && v.year >= 1900 && v.year <= 2100 ? v.year : 0,
       description: cleanText(v?.description, 1000), cover: safeUrl(v?.cover) || ''
@@ -117,7 +117,7 @@ export function nextPlayableSource(index, count) {
 // Prefer real season boundaries when supplied. Otherwise show clearly labelled
 // episode ranges instead of inventing season numbers for imported titles.
 export function episodeGroups(count, seasons = [], groupSize = 24) {
-  if (!Number.isInteger(count) || count < 1 || count > 300) return [];
+  if (!Number.isInteger(count) || count < 1 || count > 2000) return [];
   if (Array.isArray(seasons) && seasons.length) {
     const groups = seasons.map((season, index) => ({
       start: season.start, end: season.end,
