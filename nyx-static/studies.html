@@ -99,6 +99,19 @@
             </div>
             <p id="temporary-test-sound-status" class="muted" role="status" aria-live="polite">The audio has been boosted. If it is silent, press “Enable sound &amp; play”.</p>
           </div>
+          <div class="glass temporary-test-card cloudflare-test-card">
+            <p class="kicker">TEMPORARY · CLOUDFLARE STREAMING TEST</p>
+            <h2>Cloudflare Worker Playback</h2>
+            <p class="muted">This is our short original demo, not a JJK episode. Try streaming it through Cloudflare. If that connection fails, Cryalune will automatically try its own Firebase-hosted copy.</p>
+            <video id="cloudflare-test-video" controls playsinline preload="none" aria-label="Cloudflare Worker video playback test">
+              Your browser does not support MP4 playback.
+            </video>
+            <div class="temporary-test-actions">
+              <button id="cloudflare-test-start" type="button" class="button primary">▶ Play through Cloudflare</button>
+              <button id="cloudflare-test-fallback" type="button" class="button">Play Firebase backup</button>
+            </div>
+            <p id="cloudflare-test-status" class="muted" role="status" aria-live="polite">Ready to test. Select “Play through Cloudflare” to begin.</p>
+          </div>
         </div>
       </section>
 

@@ -297,7 +297,7 @@ body:has(.view[data-view="home"]:not([hidden])) {
 .temporary-test-card {max-width:960px;padding:clamp(18px,4vw,32px)}
 .temporary-test-card h2 {margin:9px 0 12px;font-size:clamp(24px,3.5vw,34px)}
 .temporary-test-card .muted {max-width:740px;line-height:1.6}
-#temporary-test-video {
+#temporary-test-video,#cloudflare-test-video {
   display:block;
   width:100%;
   height:auto;
@@ -310,6 +310,8 @@ body:has(.view[data-view="home"]:not([hidden])) {
 .temporary-test-actions {display:flex;flex-wrap:wrap;gap:11px;margin-top:18px}
 .temporary-test-actions .button {min-height:42px}
 #temporary-test-sound-status {margin-top:12px;font-size:13px}
+.cloudflare-test-card {margin-top:20px}
+#cloudflare-test-status {margin-top:12px;font-size:13px}
 .setting-toggle {display:flex;align-items:center;gap:12px;color:#e0e2e6}
 .setting-toggle input {width:18px;height:18px;accent-color:#abb0ba}
 .card-grid {grid-template-columns:repeat(auto-fill,minmax(144px,170px));justify-content:start}

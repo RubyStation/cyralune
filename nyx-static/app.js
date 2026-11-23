@@ -139,7 +139,7 @@ const videoTabContent = {
 };
 function selectVideoTab(tab) {
   if (!Object.hasOwn(videoTabContent, tab)) tab = 'anime';
-  if (tab !== 'test') $('#temporary-test-video').pause();
+  if (tab !== 'test') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); }
   activeVideoTab = tab;
   const [heading, description] = videoTabContent[tab];
   $('#videos-heading').textContent = heading;
@@ -159,7 +159,7 @@ function pageRoute() {
   if (legacyTab) { activeVideoTab = legacyTab; page = 'videos'; }
   if (page === 'detail' && !selected) page = 'videos';
   if (!$(`[data-view="${page}"]`)) page = 'home';
-  if (page !== 'videos') $('#temporary-test-video').pause();
+  if (page !== 'videos') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); }
   $$('.view').forEach(element => element.hidden = element.dataset.view !== page);
   $$('#nav a').forEach(element => { const active = element.dataset.page === page; element.classList.toggle('active', active); if (active) element.setAttribute('aria-current', 'page'); else element.removeAttribute('aria-current'); });
   if (page !== 'detail') { data.lastPage = page; save(); }
@@ -1125,6 +1125,43 @@ $('#temporary-test-sound').addEventListener('click', async () => {
     status.textContent = 'Sound is enabled at full player volume. If you still hear nothing, check your Chromebook volume and make sure this Chrome tab is not muted.';
   } catch {
     status.textContent = 'Sound is enabled. Press Play on the video. If it stays silent, check the Chromebook volume and Chrome tab mute setting.';
+  }
+});
+// An isolated playback check: the Worker can only serve our original demo.mp4.
+// Do not substitute this clip for JJK episodes or the 1080p Chromebook sample.
+const CLOUDFLARE_DEMO_URL = 'https://cryalune-media-demo.veniceplays22.workers.dev/demo.mp4';
+const FIREBASE_DEMO_URL = './assets/cyralune-demo.mp4';
+const cloudflareTestVideo = $('#cloudflare-test-video');
+let cloudflareTestFallback = false;
+function playCloudflareTest(useFallback = false) {
+  cloudflareTestFallback = useFallback;
+  const expectedSource = useFallback ? FIREBASE_DEMO_URL : CLOUDFLARE_DEMO_URL;
+  cloudflareTestVideo.pause();
+  cloudflareTestVideo.src = expectedSource;
+  cloudflareTestVideo.muted = false;
+  cloudflareTestVideo.volume = 1;
+  cloudflareTestVideo.load();
+  $('#cloudflare-test-status').textContent = useFallback
+    ? 'Loading the Firebase-hosted backup…'
+    : 'Loading the original demo through Cloudflare…';
+  cloudflareTestVideo.play().catch(() => {
+    if (cloudflareTestFallback === useFallback && !cloudflareTestVideo.error)
+      $('#cloudflare-test-status').textContent = 'Video ready. Press Play in the video controls to start.';
+  });
+}
+$('#cloudflare-test-start').addEventListener('click', () => playCloudflareTest());
+$('#cloudflare-test-fallback').addEventListener('click', () => playCloudflareTest(true));
+cloudflareTestVideo.addEventListener('loadedmetadata', () => {
+  $('#cloudflare-test-status').textContent = cloudflareTestFallback
+    ? 'Firebase backup loaded. The Cloudflare source is not being used.'
+    : 'Cloudflare video loaded. Test sound and seek forward to confirm playback.';
+});
+cloudflareTestVideo.addEventListener('error', () => {
+  if (!cloudflareTestFallback) {
+    playCloudflareTest(true);
+    $('#cloudflare-test-status').textContent = 'Cloudflare could not load. Trying the Firebase backup automatically…';
+  } else {
+    $('#cloudflare-test-status').textContent = 'Neither source could play. Check your connection or retry.';
   }
 });
 $('#export-data').addEventListener('click', () => {

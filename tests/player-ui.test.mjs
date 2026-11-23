@@ -29,6 +29,17 @@ test('temporary Chromebook clip has an explicit sound control', () => {
   assert.ok(statSync(new URL('../nyx-static/assets/temporary-chromebook-test.mp4', import.meta.url)).size > 1000000);
 });
 
+test('Cloudflare test keeps the original 1080p sample and falls back to the Firebase demo', () => {
+  assert.match(html, /id="temporary-test-video"[\s\S]*?temporary-chromebook-test\.mp4\?v=2/);
+  for (const id of ['cloudflare-test-video','cloudflare-test-start','cloudflare-test-fallback','cloudflare-test-status'])
+    assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(script, /https:\/\/cryalune-media-demo\.veniceplays22\.workers\.dev\/demo\.mp4/);
+  assert.match(script, /const FIREBASE_DEMO_URL = '\.\/assets\/cyralune-demo\.mp4'/);
+  assert.match(script, /cloudflareTestVideo\.addEventListener\('error',[\s\S]*?playCloudflareTest\(true\)/);
+  assert.match(script, /cloudflareTestVideo\.addEventListener\('loadedmetadata'/);
+  assert.ok(statSync(new URL('../nyx-static/assets/cyralune-demo.mp4', import.meta.url)).size > 100000);
+});
+
 test('privacy notice and policy links are absent from the page', () => {
   assert.doesNotMatch(html, /privacy-notice|privacy-open|privacy-footer|Privacy &amp; attribution/);
 });
