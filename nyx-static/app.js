@@ -516,7 +516,12 @@ function renderMediaEpisodeSelector() {
   const group = groups.find(item => selectedEpisode >= item.start && selectedEpisode <= item.end) || groups[0];
   $('#media-season').innerHTML = groups.map(item => `<option value="${item.start}">${escapeHtml(item.label)}</option>`).join('');
   $('#media-season').value = String(group.start);
-  $('#media-season-count').textContent = `${group.end-group.start+1} episodes · scroll below`;
+  $('#media-episode').innerHTML = Array.from({length:group.end-group.start+1},(_,index) => {
+    const number = group.start + index;
+    const title = selected.episodeTitles?.[number-1];
+    return `<option value="${number}">${number}. ${escapeHtml(title || `Episode ${number}`)}</option>`;
+  }).join('');
+  $('#media-episode').value = String(selectedEpisode);
   const title = selected.episodeTitles?.[selectedEpisode-1];
   $('#media-episode-caption').textContent = title ? `Episode ${selectedEpisode} · ${title}` : `Episode ${selectedEpisode} of ${selected.episodes}`;
   const watched = Array.from({length:selected.episodes},(_,index) => episodeMark(progressKey(selected.id,index+1)))
@@ -933,6 +938,12 @@ $('#media-season').addEventListener('change', event => {
   selectedEpisode = group.start;
   renderMediaEpisodeSelector();
 });
+$('#media-episode').addEventListener('change', event => {
+  const episode = Number(event.target.value);
+  if (!selected || !Number.isInteger(episode) || episode < 1 || episode > selected.episodes) return;
+  selectedEpisode = episode;
+  renderMediaEpisodeSelector();
+});
 $('#media-episode-grid').addEventListener('click', event => {
   if (!selected) return;
   const play = event.target.closest('[data-media-play]');
@@ -948,6 +959,9 @@ $('#media-episode-grid').addEventListener('click', event => {
     save(); renderEpisodes();
   }
   renderMediaEpisodeSelector();
+});
+$('#media-play').addEventListener('click', () => {
+  if (selected) openPlayer(selectedEpisode);
 });
 $('#media-episode-mark').addEventListener('click', () => {
   if (!selected || selectedEpisode < 1 || selectedEpisode > selected.episodes) return;
