@@ -771,6 +771,11 @@ export const VERIFIED_SEASONS = Object.freeze({
       "start": 25,
       "end": 47,
       "name": "Season 2"
+    },
+    {
+      "start": 48,
+      "end": 59,
+      "name": "Season 3"
     }
   ],
   "kaguyasamaloveiswar": [

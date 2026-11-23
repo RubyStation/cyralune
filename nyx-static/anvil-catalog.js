@@ -19,7 +19,14 @@ export const JJK_EPISODES = Object.freeze([
   'Pandemonium', 'Summon', 'Dull Knife', 'Red Scale', 'Fluctuations',
   'Fluctuations II', 'Thunderclap', 'Thunderclap II', 'Right and Wrong',
   'Right and Wrong II', 'Right and Wrong III', 'Transformation',
-  'Transformation II', 'The Shibuya Incident - Gate Closed'
+  'Transformation II', 'The Shibuya Incident - Gate Closed',
+  // Season 3: The Culling Game, Part 1 (episodes 48–59).
+  // English titles follow the published Crunchyroll episode guide.
+  'Execution', 'One More Time', 'About the Culling Game',
+  'Perfect Preparation', 'Passion', 'Cog',
+  'Tokyo No. 1 Colony, Part 1', 'Tokyo No. 1 Colony, Part 2',
+  'Tokyo No. 1 Colony, Part 3', 'Tokyo No. 1 Colony, Part 4',
+  'Tokyo No. 1 Colony, Part 5', 'Sendai Colony'
 ]);
 
 export const ANVIL_CATALOG = Object.freeze([

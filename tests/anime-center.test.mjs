@@ -29,23 +29,30 @@ test('featured and tile images crop without stretching and the poster grid adapt
   assert.match(theme,/#anime-grid \{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
-test('detail window restores season and episode dropdowns with Play and compact cards', () => {
+test('detail window keeps the classic season and episode dropdowns without episode cards', () => {
   assert.match(page,/id="media-episode-grid"/);
   assert.match(page,/id="media-season"/);
   assert.match(page,/id="media-episode"/);
   assert.match(page,/id="media-play"/);
   assert.doesNotMatch(page,/id="media-season-count"/);
-  assert.match(app,/data-media-select="\$\{episode\}"/);
-  assert.match(app,/data-media-play="\$\{episode\}"/);
-  assert.match(app,/data-media-mark="\$\{episode\}"/);
+  assert.doesNotMatch(app,/data-media-select="\$\{episode\}"/);
+  assert.match(app,/\$\('#media-episode-grid'\)\.replaceChildren\(\)/);
   assert.match(app,/\$\('#media-episode'\)\.addEventListener\('change'/);
   assert.match(app,/\$\('#media-play'\)\.addEventListener\('click'/);
-  assert.match(theme,/\.media-episode-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);
-  assert.match(theme,/max-height:414px/);
+  assert.match(app,/\$\('#media-episode-grid'\)\.hidden = true/);
   assert.ok(Object.keys(VERIFIED_SEASONS).length >= 50);
   assert.equal(VERIFIED_SEASONS.attackontitan[1].name,'Season 2');
 });
 
 test('artwork no longer uses the global grain overlay', () => {
   assert.match(theme,/body:before \{display:none\}/);
+});
+
+test('JJK seasons have the correct boundaries and external episode pages stay separate from playback', () => {
+  assert.deepEqual(VERIFIED_SEASONS.jujutsukaisen.map(group => [group.name,group.start,group.end]), [
+    ['Season 1',1,24], ['Season 2',25,47], ['Season 3',48,59]
+  ]);
+  assert.match(page,/id="media-episode-external"/);
+  assert.match(app,/externalEpisodePage\(selected\.id, selectedEpisode\)/);
+  assert.match(theme,/\.media-episode-external\[hidden\] \{display:none\}/);
 });
