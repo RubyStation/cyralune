@@ -5,7 +5,6 @@ import {PUBLISHED_SOURCES} from './published-sources.js';
 import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache, visibleAnime} from './banner-catalog.js';
 import {LOCAL_BANNERS} from './local-banner-catalog.js';
 import {VERIFIED_SEASONS} from './season-catalog.js';
-import {externalEpisodePage} from './episode-page-links.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -510,8 +509,6 @@ function renderMediaEpisodeSelector() {
   if (!available) {
     $('#media-episode-grid').replaceChildren();
     $('#media-episode-caption').textContent = 'Episode information is not available for this title yet.';
-    $('#media-episode-external').hidden = true;
-    $('#media-episode-external').removeAttribute('href');
     $('#media-episode-progress').textContent = '';
     $('#media-source-note').textContent = 'Add episode information before selecting a video.';
     return;
@@ -528,14 +525,6 @@ function renderMediaEpisodeSelector() {
   $('#media-episode').value = String(selectedEpisode);
   const title = selected.episodeTitles?.[selectedEpisode-1];
   $('#media-episode-caption').textContent = title ? `Episode ${selectedEpisode} · ${title}` : `Episode ${selectedEpisode} of ${selected.episodes}`;
-  const externalPage = externalEpisodePage(selected.id, selectedEpisode);
-  const externalLink = $('#media-episode-external');
-  externalLink.hidden = !externalPage;
-  if (externalPage) {
-    externalLink.href = externalPage;
-    externalLink.textContent = `TokyoInsider · Episode ${selectedEpisode} download page (external)`;
-  }
-  else externalLink.removeAttribute('href');
   const watched = Array.from({length:selected.episodes},(_,index) => episodeMark(progressKey(selected.id,index+1)))
     .filter(mark => mark === 'watched').length;
   $('#media-episode-progress').textContent = `${watched} of ${selected.episodes} watched`;
@@ -546,11 +535,9 @@ function renderMediaEpisodeSelector() {
   const sources = sourcesForEpisode.length;
   const previewOnly = sources > 0 && sourcesForEpisode.every(source => source.preview === true);
   $('#media-source-note').textContent = previewOnly
-    ? 'Only a short playback test clip is connected, not the full episode. The external link above opens a download page, not a video in Cryalune.'
+    ? 'Only a short playback test clip is connected, not the full episode. You can choose an authorized MP4 from your device or add a hosted MP4 source.'
     : sources
     ? `${sources} available playback source${sources === 1 ? '' : 's'} for this episode. You can also choose a local video file.`
-    : externalPage
-      ? 'The external link opens an episode download page, not a playable Cryalune video. Select Play to add a permitted source or choose a local file.'
       : 'No video source linked to this episode yet. Select Play to add a permitted source or choose a video from your device.';
   const poster = data.lowDataMode ? '' : trustedCover(selected.detailCover) || trustedCover(selected.cover);
   const smallPoster = data.lowDataMode ? '' : trustedCover(selected.cover);

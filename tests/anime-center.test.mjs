@@ -48,11 +48,10 @@ test('artwork no longer uses the global grain overlay', () => {
   assert.match(theme,/body:before \{display:none\}/);
 });
 
-test('JJK seasons have the correct boundaries and external episode pages stay separate from playback', () => {
+test('JJK seasons have correct boundaries without external download links', () => {
   assert.deepEqual(VERIFIED_SEASONS.jujutsukaisen.map(group => [group.name,group.start,group.end]), [
     ['Season 1',1,24], ['Season 2',25,47], ['Season 3',48,59]
   ]);
-  assert.match(page,/id="media-episode-external"/);
-  assert.match(app,/externalEpisodePage\(selected\.id, selectedEpisode\)/);
-  assert.match(theme,/\.media-episode-external\[hidden\] \{display:none\}/);
+  assert.doesNotMatch(page,/media-episode-external/);
+  assert.doesNotMatch(app,/externalEpisodePage/);
 });
