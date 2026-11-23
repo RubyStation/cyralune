@@ -1,16 +1,17 @@
 # Cryalune Cloudflare Worker — demo only
 
-This Worker demonstrates Cloudflare-hosted video playback using Cryalune's **original short test clip**. The clip is included as a static asset in `public/demo.mp4` and no longer depends on an upstream request to Firebase. It does not contain, locate, or unlock any Jujutsu Kaisen episode, N7X backend, DRM stream, or third-party media.
+This Worker demonstrates a restricted Cloudflare media fetch using Cryalune's **original short test clip**, with a local fallback. It first fetches `https://cryalune.firebaseapp.com/assets/cyralune-demo.mp4` and, if that request fails, serves the same clip bundled as a static asset in `public/demo.mp4`. It does not contain, locate, or unlock any Jujutsu Kaisen episode, N7X backend, DRM stream, or third-party media.
 
 ## What it does
 
 - `GET /health`: returns a status message
-- `GET /demo.mp4`: serves the bundled original MP4 from Cloudflare Static Assets
-- `HEAD /demo.mp4`: serves metadata
-- `GET /demo.mp4` with `Range: bytes=0-1023`: forwards the range header to Static Assets (which currently responds with the small full file, HTTP 200)
+- `GET /demo.mp4`: fetches the known Firebase MP4, using the bundled asset if needed
+- `HEAD /demo.mp4`: forwards metadata requests to the same two sources
+- `GET /demo.mp4` with `Range: bytes=0-1023`: forwards a byte-range request to Firebase (or to Static Assets as a fallback, which currently responds with the small full file, HTTP 200)
+- Adds `X-Cryalune-Video-Source: firebase` or `bundled` to show which source handled the request
 - Ignores benign `utm_*` tracking parameters and rejects arbitrary source URLs, other paths and foreign website origins
 
-The Worker forwards the static asset's response body without buffering it. Access depends on Cloudflare being available on the viewer's network. For full-length video and efficient seeking, use proper range-capable storage such as R2 rather than large Workers Static Assets files.
+The Worker forwards the selected response body without buffering it. Access depends on Cloudflare and, when using the primary source, Firebase being available on the viewer's network. For full-length video and efficient seeking, use proper range-capable storage such as R2 rather than large Workers Static Assets files.
 
 ## Run tests
 
