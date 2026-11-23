@@ -1,6 +1,6 @@
-// Cryalune's restricted media relay proof-of-concept.
-// This is NOT an open proxy. It can fetch only Cryalune's original demo clip.
-const DEMO_URL = 'https://cryalune.firebaseapp.com/assets/cyralune-demo.mp4';
+// Cryalune's isolated Cloudflare video playback test.
+// The small original demo clip is deployed as a Worker static asset, so playback
+// does not depend on fetching an upstream copy from Firebase.
 const ALLOWED_ORIGINS = new Set([
   'https://cryalune.firebaseapp.com',
   'https://cryalune.web.app'
@@ -20,18 +20,20 @@ function addCors(headers, origin) {
   headers.set('Vary', 'Origin');
 }
 
-export function makeWorker(fetchUpstream = fetch) {
+export function makeWorker(fetchDemo = (request, env) => env.ASSETS.fetch(request)) {
   return {
-    async fetch(request) {
+    async fetch(request, env) {
       const url = new URL(request.url);
       const origin = request.headers.get('Origin') || '';
       if (origin && !ALLOWED_ORIGINS.has(origin)) return reply('Origin not allowed', 403);
       if (!['GET','HEAD','OPTIONS'].includes(request.method)) return reply('Method not allowed', 405, origin);
 
       if (url.pathname === '/health' && request.method === 'GET' && !url.search) {
-        return reply('Cryalune demo relay ready; no anime sources connected', 200, origin);
+        return reply('Cryalune video demo ready; clip stored with this Worker', 200, origin);
       }
-      if (url.pathname !== '/demo.mp4' || url.search) return reply('Not found', 404, origin);
+      // Chat apps sometimes append utm_source. Ignore only tracking parameters.
+      const trackingOnly = [...url.searchParams.keys()].every((key) => /^utm_[a-z0-9_]+$/i.test(key));
+      if (url.pathname !== '/demo.mp4' || !trackingOnly) return reply('Not found', 404, origin);
 
       if (request.method === 'OPTIONS') {
         const headers = new Headers();
@@ -41,26 +43,29 @@ export function makeWorker(fetchUpstream = fetch) {
       const range = request.headers.get('Range');
       if (range && !/^bytes=(?:\d+-\d*|-\d+)$/.test(range)) return reply('Invalid byte range', 400, origin);
 
-      const requestHeaders = new Headers();
-      if (range) requestHeaders.set('Range', range);
+      const assetHeaders = new Headers();
+      if (range) assetHeaders.set('Range', range);
       try {
-        const upstream = await fetchUpstream(DEMO_URL, {
-          method:request.method, headers:requestHeaders, redirect:'error', signal:request.signal
+        const assetRequest = new Request(new URL('/demo.mp4', url), {
+          method:request.method, headers:assetHeaders, signal:request.signal
         });
-        if (![200,206,416].includes(upstream.status)) return reply('Demo source unavailable', 502, origin);
+        const asset = await fetchDemo(assetRequest, env);
+        if (![200,206,416].includes(asset.status)) return reply('Demo asset unavailable', 502, origin);
         const headers = new Headers();
         for (const name of ['content-type','content-length','content-range','accept-ranges','etag','last-modified','cache-control']) {
-          const value = upstream.headers.get(name);
+          const value = asset.headers.get(name);
           if (value) headers.set(name, value);
         }
+        headers.set('Content-Type', 'video/mp4');
         headers.set('X-Content-Type-Options', 'nosniff');
         if (origin) addCors(headers, origin);
-        // Passing the upstream ReadableStream avoids buffering an entire movie.
-        return new Response(request.method === 'HEAD' ? null : upstream.body, {
-          status:upstream.status, headers
+        // Static Assets currently returns 200 for Range requests. That is fine
+        // for this tiny test clip; full-length videos should use R2 byte ranges.
+        return new Response(request.method === 'HEAD' ? null : asset.body, {
+          status:asset.status, headers
         });
       } catch {
-        return reply('Demo source unavailable', 502, origin);
+        return reply('Demo asset unavailable', 502, origin);
       }
     }
   };

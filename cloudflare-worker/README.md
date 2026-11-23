@@ -1,16 +1,16 @@
 # Cryalune Cloudflare Worker — demo only
 
-This Worker demonstrates a restricted, streaming media relay using the **original Cryalune test clip** already hosted on Firebase. It does not contain, locate, or unlock any Jujutsu Kaisen episode, N7X backend, DRM stream, or third-party media.
+This Worker demonstrates Cloudflare-hosted video playback using Cryalune's **original short test clip**. The clip is included as a static asset in `public/demo.mp4` and no longer depends on an upstream request to Firebase. It does not contain, locate, or unlock any Jujutsu Kaisen episode, N7X backend, DRM stream, or third-party media.
 
 ## What it does
 
 - `GET /health`: returns a status message
-- `GET /demo.mp4`: forwards the original demo video as a stream
-- `HEAD /demo.mp4`: forwards metadata
-- `GET /demo.mp4` with `Range: bytes=0-1023`: forwards a byte-range request
-- Rejects all other paths and foreign website origins; never accepts an arbitrary upstream URL
+- `GET /demo.mp4`: serves the bundled original MP4 from Cloudflare Static Assets
+- `HEAD /demo.mp4`: serves metadata
+- `GET /demo.mp4` with `Range: bytes=0-1023`: forwards the range header to Static Assets (which currently responds with the small full file, HTTP 200)
+- Ignores benign `utm_*` tracking parameters and rejects arbitrary source URLs, other paths and foreign website origins
 
-The Worker forwards data without buffering a whole video. Access still depends on Cloudflare and Firebase being available on the viewer's network.
+The Worker forwards the static asset's response body without buffering it. Access depends on Cloudflare being available on the viewer's network. For full-length video and efficient seeking, use proper range-capable storage such as R2 rather than large Workers Static Assets files.
 
 ## Run tests
 
@@ -24,7 +24,7 @@ npm test
 
 1. Create a **Free** Cloudflare account at https://dash.cloudflare.com/.
 2. On a computer with Node.js, open a terminal in `cloudflare-worker/`.
-3. Run `npx wrangler login` and complete sign-in in your browser.
+3. Run `npx wrangler login --device --browser=false` and complete sign-in in your browser if needed.
 4. Run `npx wrangler deploy`. It should show your personal `*.workers.dev` URL.
 5. Visit `https://YOUR-WORKER.workers.dev/health` and then `/demo.mp4`.
 
