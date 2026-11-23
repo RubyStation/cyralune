@@ -15,6 +15,9 @@ test('Anime Center has a dedicated featured area and keeps the original search a
 });
 
 test('featured Watch opens the existing episode player and poster cards open details', () => {
+  assert.match(app, /const banner = featured && '\.\/assets\/banners\/jujutsu-kaisen-featured\.jpg'/);
+  const jpg = readFileSync(new URL('../nyx-static/assets/banners/jujutsu-kaisen-featured.jpg',import.meta.url));
+  assert.deepEqual([...jpg.subarray(0,2)],[0xff,0xd8]);
   assert.match(app,/data-action="feature-watch"/);
   assert.match(app,/if \(action === 'feature-watch'\)/);
   assert.match(app,/if \(selected\?\.episodes > 0\) openPlayer\(1\)/);
