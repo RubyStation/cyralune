@@ -112,6 +112,19 @@
             </div>
             <p id="cloudflare-test-status" class="muted" role="status" aria-live="polite">Ready to test. Select “Play through Cloudflare” to begin.</p>
           </div>
+          <div class="glass temporary-test-card cloudflare-test-card">
+            <p class="kicker">JJK EPISODE 1 · FULL-LENGTH STREAM TEST</p>
+            <h2>Jujutsu Kaisen · Episode 1</h2>
+            <p class="muted">Test the original MP4 uploaded to our GitHub Release, streamed through the Cloudflare Worker. This is separate from the regular anime episode selector. The video is not stored in Firebase Hosting.</p>
+            <video id="jjk-test-video" controls playsinline preload="none" aria-label="Jujutsu Kaisen episode 1 Cloudflare streaming test">
+              Your browser does not support MP4 playback.
+            </video>
+            <div class="temporary-test-actions">
+              <button id="jjk-test-start" type="button" class="button primary">▶ Test full Episode 1</button>
+              <a class="button" href="https://cryalune-media-demo.veniceplays22.workers.dev/jjk-test.mp4" target="_blank" rel="noopener noreferrer">Open Worker video directly</a>
+            </div>
+            <p id="jjk-test-status" class="muted" role="status" aria-live="polite">Ready. Deploy the updated Cloudflare Worker and press Test full Episode 1.</p>
+          </div>
         </div>
       </section>
 
