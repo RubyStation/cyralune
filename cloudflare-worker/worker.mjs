@@ -1,6 +1,7 @@
-// Cryalune's isolated Cloudflare video playback test.
-// Fetch only the original Firebase clip; if that fails, serve the bundled copy.
-// This is not an open proxy and cannot fetch arbitrary user-supplied URLs.
+// Cryalune's two restricted Cloudflare playback tests.
+// The demo uses Firebase with a bundled fallback; the JJK test streams a fixed
+// GitHub Release asset. Neither route accepts arbitrary upstream URLs.
+const JJK_RELEASE_URL = 'https://github.com/RubyStation/cyralune/releases/download/jjk-test/Jujutsu.Kaisen.TV.Episode.1.mp4';
 const DEMO_URL = 'https://cryalune.firebaseapp.com/assets/cyralune-demo.mp4';
 const ALLOWED_ORIGINS = new Set([
   'https://cryalune.firebaseapp.com',
@@ -33,11 +34,12 @@ export function makeWorker(
       if (!['GET','HEAD','OPTIONS'].includes(request.method)) return reply('Method not allowed', 405, origin);
 
       if (url.pathname === '/health' && request.method === 'GET' && !url.search) {
-        return reply('Cryalune video demo ready; Firebase fetch with bundled backup', 200, origin);
+        return reply('Cryalune video demo ready; Firebase backup and JJK release test route available', 200, origin);
       }
       // Chat apps sometimes append utm_source. Ignore only tracking parameters.
       const trackingOnly = [...url.searchParams.keys()].every((key) => /^utm_[a-z0-9_]+$/i.test(key));
-      if (url.pathname !== '/demo.mp4' || !trackingOnly) return reply('Not found', 404, origin);
+      const jjkTest = url.pathname === '/jjk-test.mp4';
+      if ((!jjkTest && url.pathname !== '/demo.mp4') || !trackingOnly) return reply('Not found', 404, origin);
 
       if (request.method === 'OPTIONS') {
         const headers = new Headers();
@@ -50,25 +52,25 @@ export function makeWorker(
       const mediaHeaders = new Headers();
       if (range) mediaHeaders.set('Range', range);
 
-      // First try the fixed, trusted Firebase URL. Do not send browser cookies,
+      // Fetch only the fixed source for this route. Do not send browser cookies,
       // authentication headers, or any caller-controlled upstream URL.
       let media;
       let source;
       try {
-        const response = await fetchUpstream(DEMO_URL, {
-          method:request.method, headers:mediaHeaders, signal:request.signal
+        const response = await fetchUpstream(jjkTest ? JJK_RELEASE_URL : DEMO_URL, {
+          method:request.method, headers:mediaHeaders, redirect:'follow', signal:request.signal
         });
         if ([200,206,416].includes(response.status) && (
           response.status === 416 || /^(video\/|application\/octet-stream)/i.test(response.headers.get('Content-Type') || '')
         )) {
           media = response;
-          source = 'firebase';
+          source = jjkTest ? 'github-release' : 'firebase';
         }
       } catch {
-        // The bundled clip provides an independent fallback for the test.
+        // The demo can fall back to its bundled clip; the JJK route reports failure.
       }
 
-      if (!media) {
+      if (!media && !jjkTest) {
         try {
           const backupRequest = new Request(new URL('/demo.mp4', url), {
             method:request.method, headers:mediaHeaders, signal:request.signal
@@ -82,7 +84,7 @@ export function makeWorker(
           // Both known video sources were unavailable.
         }
       }
-      if (!media) return reply('Demo sources unavailable', 502, origin);
+      if (!media) return reply(jjkTest ? 'JJK release source unavailable' : 'Demo sources unavailable', 502, origin);
 
       try {
         const headers = new Headers();
@@ -94,13 +96,13 @@ export function makeWorker(
         headers.set('X-Content-Type-Options', 'nosniff');
         headers.set('X-Cryalune-Video-Source', source);
         if (origin) addCors(headers, origin);
-        // Firebase can return 206 for seeking. Static Assets currently returns
-        // 200 for ranges, which is acceptable for this very small fallback.
+        // GitHub Releases and Firebase can return 206 for seeking. Static Assets
+        // currently returns 200 for ranges (fine for the very small demo).
         return new Response(request.method === 'HEAD' ? null : media.body, {
           status:media.status, headers
         });
       } catch {
-        return reply('Demo sources unavailable', 502, origin);
+        return reply(jjkTest ? 'JJK release source unavailable' : 'Demo sources unavailable', 502, origin);
       }
     }
   };
