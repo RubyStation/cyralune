@@ -17,16 +17,16 @@
     <aside class="rail" aria-label="Main navigation">
       <a href="#home" class="mark" aria-label="Cryalune home"><img src="./assets/moonrise-logo.svg" alt="" width="46" height="46"></a>
       <nav id="nav" class="rail-nav">
-        <a href="#home" data-page="home" title="Home"><span>⌂</span><small>Home</small></a>
+        <a href="#home" data-page="home" title="Home"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-8h6v8"/></svg></span><small>Home</small></a>
         <a href="#videos" data-page="videos" title="Videos"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M10.15 9.2 15.7 12l-5.55 2.8Z" stroke="none" fill="currentColor"/></svg></span><small>Videos</small></a>
-        <a href="#settings" data-page="settings" title="Settings"><span>⚙</span><small>Settings</small></a>
+        <a href="#settings" data-page="settings" title="Settings"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.75 3.25h4.5l.5 2.2a7 7 0 0 1 1.5.85l2.14-.8 2.25 3.9-1.72 1.4a7.5 7.5 0 0 1 0 1.7l1.72 1.4-2.25 3.9-2.14-.8a7 7 0 0 1-1.5.85l-.5 2.2h-4.5l-.5-2.2a7 7 0 0 1-1.5-.85l-2.14.8-2.25-3.9 1.72-1.4a7.5 7.5 0 0 1 0-1.7L3.3 9.4l2.25-3.9 2.14.8a7 7 0 0 1 1.5-.85Z"/><circle cx="12" cy="11.65" r="2.75"/></svg></span><small>Settings</small></a>
       </nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <a href="#home" class="brand"><strong>CRYALUNE</strong><span>THE LUNAR CINEMA · PERSONAL EDITION</span></a>
-        <div class="topbar-right"><span class="privacy">● Your library stays on this device</span><button id="go-search" class="icon-button" aria-label="Search anime">⌕</button></div>
+        <div class="topbar-right"><span class="privacy">● Your library stays on this device</span><button id="go-search" class="icon-button" aria-label="Search anime"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button></div>
       </header>
 
       <section data-view="home" class="view">
@@ -37,9 +37,9 @@
             <p class="home-subtitle">THE LUNAR CINEMA</p>
             <form id="home-search-form" class="home-search" role="search">
               <label class="sr-only" for="home-query">Search anime</label>
-              <span aria-hidden="true">⌕</span>
+              <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>
               <input id="home-query" type="search" placeholder="Search anime" maxlength="100" autocomplete="off">
-              <button type="submit" aria-label="Search videos">→</button>
+              <button type="submit" aria-label="Search videos"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
             </form>
             <a class="home-browse" href="#videos">Explore videos <span aria-hidden="true">→</span></a>
           </div>
@@ -61,7 +61,7 @@
           <section id="anime-feature" class="anime-feature" aria-label="Featured anime" hidden></section>
           <div class="anime-library-heading">
             <div><p class="kicker">DISCOVER YOUR NEXT STORY</p><h2 id="anime-heading">The anime collection</h2><span class="muted" id="anime-count"></span></div>
-            <form id="anime-search-form" class="search-bar" role="search"><label class="sr-only" for="anime-query">Search anime</label><span aria-hidden="true">⌕</span><input id="anime-query" type="search" placeholder="Search anime or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
+            <form id="anime-search-form" class="search-bar" role="search"><label class="sr-only" for="anime-query">Search anime</label><span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><input id="anime-query" type="search" placeholder="Search anime or genres…" maxlength="100" autocomplete="off"><button class="button primary" type="submit">Search</button></form>
           </div>
           <p id="anime-status" class="status" role="status">Preparing anime catalog…</p>
           <button id="retry-banners" type="button" class="button" hidden>Retry widescreen artwork</button>
