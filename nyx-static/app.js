@@ -1,6 +1,6 @@
 import {STORAGE_KEY, safeUrl, cleanText, escapeHtml, normalizedSource, sortedSources, defaultData, restoreData, progressKey, neighboringEpisode, nextPlayableSource, episodeGroups, PLAYBACK_SPEEDS} from './core.js';
-import {ANVIL_CATALOG, searchAnvilCatalog} from './anvil-catalog.js';
-import {OFFLINE_ANIME, searchOfflineAnime} from './offline-anime.js';
+import {ANVIL_CATALOG} from './anvil-catalog.js';
+import {OFFLINE_ANIME} from './offline-anime.js';
 import {PUBLISHED_SOURCES} from './published-sources.js';
 import {BANNER_CACHE_KEY, normalizedTitle, bannerQuery, verifiedBanner, restoreBannerCache} from './banner-catalog.js';
 import {LOCAL_BANNERS} from './local-banner-catalog.js';
@@ -25,7 +25,7 @@ seedCatalog();
 for (const title of data.titles) catalog.set(title.id, title);
 
 let selected = null, selectedEpisode = 1, currentSource = null, activeSources = [], activeIndex = -1;
-let localVideoUrl = '', localCaptionUrl = '', hls = null, searchSerial = 0, lastSavedSecond = -1;
+let localVideoUrl = '', localCaptionUrl = '', hls = null, lastSavedSecond = -1;
 let hlsLibraryPromise = null, pendingAutoplay = false;
 let activeVideoTab = 'anime', lastRenderedPage = '', detailReturnPage = 'videos', detailReturnTab = 'anime';
 const video = $('#video');
@@ -345,82 +345,28 @@ function uniqueAnime(items) {
   });
 }
 
-function localAnime(search = '') {
-  const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
-  const extra = [...data.titles.filter(item => item.type === 'anime'), ...data.animeCache]
-    .filter(item => words.every(word => `${item.name} ${item.genre || ''} ${item.description || ''} ${item.year || ''}`.toLocaleLowerCase().includes(word)));
-  const custom = extra.filter(item => item.id.startsWith('custom:'));
-  const cached = extra.filter(item => !item.id.startsWith('custom:'));
-  return uniqueAnime([...searchAnvilCatalog(search), ...custom, ...searchOfflineAnime(search), ...cached]);
+// The browse collection is the source of truth for search. Never let an
+// external search or old AniList cache silently add titles not on these pages.
+function browseAnime() {
+  const custom = data.titles.filter(item => item.type === 'anime');
+  return uniqueAnime([...ANVIL_CATALOG, ...custom, ...OFFLINE_ANIME]);
 }
 
-const animeQuery = `query ($search: String) {
-  Page(page: 1, perPage: 24) { media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
-    id title { english romaji } episodes format averageScore coverImage { large } bannerImage
-    description(asHtml: false) seasonYear
-  } }
-}`;
+function localAnime(search = '') {
+  const words = search.toLocaleLowerCase().trim().split(/\s+/u).filter(Boolean);
+  return browseAnime().filter(item =>
+    words.every(word => `${item.name} ${item.genre || ''} ${item.description || ''} ${item.year || ''}`
+      .toLocaleLowerCase().includes(word)));
+}
 
-async function loadAnime(search = '') {
-  const request = ++searchSerial;
-  const saved = localAnime(search);
+function loadAnime(search = '') {
+  const results = localAnime(search);
   $('#anime-heading').textContent = search ? `Results for “${search}”` : 'The anime collection';
-  $('#anime-status').classList.remove('error');
-  renderAnime(saved, {resetPage:true});
-  if (data.lowDataMode) {
-    $('#anime-status').textContent = 'Low-Data Mode is on. Your saved anime library remains available without online discovery.';
-    return;
-  }
-  $('#anime-status').textContent = 'Showing the saved poster collection while checking for additional anime…';
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
-    let response;
-    try {
-      response = await fetch('https://graphql.anilist.co', {method:'POST', signal:controller.signal,
-        headers:{'Content-Type':'application/json', 'Accept':'application/json'},
-        body:JSON.stringify({query:animeQuery, variables:{search:search || null}})});
-    } finally { clearTimeout(timeout); }
-    if (!response.ok) throw Error(`Catalog returned HTTP ${response.status}`);
-    const payload = await response.json();
-    if (!Array.isArray(payload?.data?.Page?.media)) throw Error('Catalog response was incomplete');
-    if (request !== searchSerial) return;
-    const online = payload.data.Page.media.map(row => {
-      const name = cleanText(row.title?.english || row.title?.romaji, 120);
-      const offline = OFFLINE_ANIME.find(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-      const banner = verifiedBanner(name,row,offline?.year);
-      if (banner) rememberWideBanner(name,banner);
-      const item = {id:offline?.id || `anime:${row.id}`, name:offline?.name || name, type:'anime',
-        episodes:row.episodes ? Math.min(300, Math.max(1, row.episodes)) : 0, format:row.format || 'Anime', score:row.averageScore || 0,
-        cover:safeUrl(row.coverImage?.large || '') || '', banner,
-        description:cleanText((row.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' '), 1000), year:row.seasonYear || ''};
-      if (offline?.episodeTitles?.length) Object.assign(item, offline);
-      if (offline?.cover) {
-        item.cover = offline.cover;
-        item.detailCover = offline.detailCover;
-      }
-      // Preserve the original Anvil IDs and JJK episode names.
-      if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) catalog.set(item.id, item);
-      return item;
-    }).filter(item => item.name);
-    const cache = new Map(data.animeCache.map(item => [item.id, item]));
-    for (const item of online) if (!ANVIL_CATALOG.some(savedItem => savedItem.id === item.id)) cache.set(item.id, item);
-    data.animeCache = [...cache.values()].slice(-200);
-    save();
-    const items = localAnime(search);
-    renderAnime(items);
-    $('#anime-status').textContent = 'Saved anime are ready. Use the page numbers to browse the whole collection.';
-  } catch (error) {
-    if (request !== searchSerial) return;
-    bannerLookupUnavailable = true;
-    pendingWideBanners.clear();
-    $('#retry-banners').hidden = false;
-    renderAnime(localAnime(search));
-    $('#anime-status').textContent = saved.length
-      ? 'Online discovery is unavailable on this network. Showing your saved anime library instead.'
-      : 'No saved matches, and online search is unavailable right now. Try another title or genre.';
-    if (!saved.length) $('#anime-status').classList.add('error');
-  }
+  $('#anime-status').classList.toggle('error', Boolean(search.trim()) && results.length === 0);
+  $('#anime-status').textContent = results.length
+    ? 'Showing titles from the anime collection only.'
+    : 'No anime in your collection match this search.';
+  renderAnime(results, {resetPage:true});
 }
 
 function openDetails(id) {
@@ -966,7 +912,6 @@ $('#home-search-form').addEventListener('submit', event => {
 let animeSearchTimer;
 $('#anime-query').addEventListener('input', () => {
   clearTimeout(animeSearchTimer);
-  ++searchSerial; // Invalidate older online requests immediately when the query changes.
   const query = $('#anime-query').value.trim();
   $('#anime-heading').textContent = query ? `Results for “${query}”` : 'The anime collection';
   renderAnime(localAnime(query), {resetPage:true});
