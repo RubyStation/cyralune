@@ -47,6 +47,60 @@ test('uses the bundled clip when the Firebase request fails', async () => {
   assert.equal(backupCalls[0].headers.get('Range'),'bytes=0-3');
 });
 
+test('JJK test streams the fixed GitHub Release MP4 with seeking and CORS', async () => {
+  const calls = [];
+  const worker = makeWorker(
+    async (url, options) => {
+      calls.push({url, options});
+      return new Response('chunk', {status:206, headers:{
+        'Content-Type':'application/octet-stream',
+        'Content-Range':'bytes 0-4/313070144',
+        'Content-Length':'5',
+        'Accept-Ranges':'bytes',
+        'Content-Disposition':'attachment; filename="episode.mp4"'
+      }});
+    },
+    () => { throw new Error('the JJK route must never use the demo fallback'); }
+  );
+  const response = await worker.fetch(new Request(endpoint+'/jjk-test.mp4', {
+    headers:{...originHeaders, Range:'bytes=0-4'}
+  }));
+  assert.equal(response.status,206);
+  assert.equal(await response.text(),'chunk');
+  assert.equal(response.headers.get('Content-Type'),'video/mp4');
+  assert.equal(response.headers.get('Content-Range'),'bytes 0-4/313070144');
+  assert.equal(response.headers.get('Accept-Ranges'),'bytes');
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'),allowed);
+  assert.equal(response.headers.get('X-Cryalune-Video-Source'),'github-release');
+  assert.equal(response.headers.get('Content-Disposition'),null);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].url,'https://github.com/RubyStation/cyralune/releases/download/jjk-test/Jujutsu.Kaisen.TV.Episode.1.mp4');
+  assert.equal(calls[0].options.headers.get('Range'),'bytes=0-4');
+  assert.equal(calls[0].options.redirect,'follow');
+});
+
+test('JJK HEAD and preflight work; unavailable releases fail cleanly', async () => {
+  let upstreamRequests = 0;
+  const worker = makeWorker(async (url, options) => {
+    upstreamRequests++;
+    if (options.method === 'HEAD')
+      return new Response(null, {status:200, headers:{'Content-Type':'video/mp4','Content-Length':'313070144'}});
+    return new Response('missing', {status:404});
+  });
+  const preflight = await worker.fetch(new Request(endpoint+'/jjk-test.mp4', {method:'OPTIONS',headers:originHeaders}));
+  assert.equal(preflight.status,204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),allowed);
+  assert.equal(upstreamRequests,0);
+  const head = await worker.fetch(new Request(endpoint+'/jjk-test.mp4', {method:'HEAD'}));
+  assert.equal(head.status,200);
+  assert.equal(head.headers.get('Content-Length'),'313070144');
+  assert.equal(await head.text(),'');
+  const missing = await worker.fetch(new Request(endpoint+'/jjk-test.mp4'));
+  assert.equal(missing.status,502);
+  assert.match(await missing.text(),/JJK release source unavailable/);
+  assert.equal(upstreamRequests,2);
+});
+
 test('demo refuses arbitrary URLs, foreign origins and methods', async () => {
   let forwarded = 0;
   const refuse = async () => { forwarded++; throw new Error('should not fetch'); };
@@ -54,6 +108,9 @@ test('demo refuses arbitrary URLs, foreign origins and methods', async () => {
   const cases = [
     [new Request(endpoint+'/demo.mp4?url=https://other.example'),404],
     [new Request(endpoint+'/anything.mp4'),404],
+    [new Request(endpoint+'/jjk-test.mp4?source=https://other.example'),404],
+    [new Request(endpoint+'/jjk-test.mp4', {headers:{Origin:'https://foreign.example'}}),403],
+    [new Request(endpoint+'/jjk-test.mp4', {headers:{Range:'bytes=0-4,5-9'}}),400],
     [new Request(endpoint+'/demo.mp4', {headers:{Origin:'https://foreign.example'}}),403],
     [new Request(endpoint+'/demo.mp4', {method:'POST'}),405],
     [new Request(endpoint+'/demo.mp4', {headers:{Range:'bytes=0-4,5-9'}}),400]
