@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <title>Chrome-style new tab icon</title>
-  <circle cx="24" cy="24" r="20" stroke="#fff" stroke-width="3.4"/>
-  <circle cx="24" cy="24" r="8.4" stroke="#fff" stroke-width="3.4"/>
-  <path d="M24 15.6h17.8M16.7 28.2 7.9 12.7M28.2 31.3 19.3 43" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>White Chrome-style new tab icon</title>
+  <!-- The mask cuts the shutter seams out of the solid white disc.
+       The icon has a fully transparent background, even at its center. -->
+  <mask id="shutter" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+    <rect width="64" height="64" fill="white"/>
+    <circle cx="32" cy="32" r="10.5" fill="none" stroke="black" stroke-width="1.6"/>
+    <path d="M12.8 12.8 24.4 36.8M32 21.5H59M36.8 41.2 22.6 59" fill="none" stroke="black" stroke-width="1.6" stroke-linecap="round"/>
+  </mask>
+  <circle cx="32" cy="32" r="28" fill="white" mask="url(#shutter)"/>
 </svg>
