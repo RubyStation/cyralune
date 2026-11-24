@@ -59,3 +59,32 @@ test('JJK seasons have correct boundaries without external download links', () =
   assert.doesNotMatch(page,/media-episode-external/);
   assert.doesNotMatch(app,/externalEpisodePage/);
 });
+
+test('navigation uses matching SVG icons and both search fields have aligned controls', () => {
+  assert.match(page, /data-page="home"[^>]*><span class="nav-icon"[^>]*><svg/);
+  assert.match(page, /data-page="settings"[^>]*><span class="nav-icon"[^>]*><svg/);
+  assert.doesNotMatch(page, /<span>⌂<\/span>|<span>⚙<\/span>/);
+  assert.match(page, /id="home-search-form"[\s\S]*?class="search-icon"[\s\S]*?id="home-query"/);
+  assert.match(page, /id="anime-search-form"[\s\S]*?class="search-icon"[\s\S]*?id="anime-query"/);
+  assert.match(theme, /\.home-search \.search-icon/);
+  assert.match(theme, /\.anime-library-heading \.search-bar \.button/);
+});
+
+test('search never includes old discovery caches or network-only anime', () => {
+  const from = app.indexOf('function uniqueAnime(');
+  const to = app.indexOf('function loadAnime(', from);
+  assert.ok(from >= 0 && to > from);
+  const createSearch = new Function('ANVIL_CATALOG', 'OFFLINE_ANIME', 'data',
+    app.slice(from,to) + '\nreturn {browseAnime, localAnime};');
+  const {browseAnime, localAnime} = createSearch(
+    [{id:'anime:jjk',name:'Jujutsu Kaisen',type:'anime',genre:'Action'}],
+    [{id:'offline:naruto',name:'Naruto',type:'anime',genre:'Ninja'}],
+    {titles:[{id:'custom:1',name:'My Custom Anime',type:'anime'}],
+      animeCache:[{id:'anime:999',name:'Extra Ghost Series',type:'anime'}]});
+  assert.deepEqual(browseAnime().map(item => item.name), ['Jujutsu Kaisen','My Custom Anime','Naruto']);
+  assert.deepEqual(localAnime('ghost'), []);
+  assert.deepEqual(localAnime('jujutsu').map(item => item.name), ['Jujutsu Kaisen']);
+  assert.deepEqual(localAnime('custom').map(item => item.name), ['My Custom Anime']);
+  assert.doesNotMatch(app, /const animeQuery =/);
+  assert.doesNotMatch(app, /online = payload\.data\.Page\.media/);
+});
