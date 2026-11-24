@@ -619,3 +619,106 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
 .home-landing {display:flex;align-items:center;justify-content:center;box-sizing:border-box}
 .home-landing > svg.home-orbits {display:block;position:absolute;max-height:83dvh;overflow:visible;flex:none}
 .home-landing > .home-identity {flex:none;margin:0 auto}
+
+/* Cryalune UI polish: frosted charcoal, with no added lights or artwork filters. */
+.glass {
+  background:linear-gradient(145deg,rgba(45,49,59,.72),rgba(22,25,33,.86) 48%,rgba(13,16,22,.94));
+  border-color:rgba(232,236,244,.15);
+  box-shadow:inset 0 1px rgba(255,255,255,.09),0 20px 48px rgba(0,0,0,.32);
+  -webkit-backdrop-filter:blur(13px) saturate(115%);
+  backdrop-filter:blur(13px) saturate(115%);
+}
+.video-tabs,.search-bar,.home-search,.anime-library-heading .search-bar {
+  background-color:rgba(23,27,34,.8);
+  border-color:rgba(236,239,246,.2);
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 9px 26px rgba(0,0,0,.14);
+  -webkit-backdrop-filter:blur(9px);
+  backdrop-filter:blur(9px);
+}
+.media-detail-dialog {
+  box-shadow:inset 0 1px rgba(255,255,255,.07),0 35px 100px rgba(0,0,0,.75);
+}
+
+/* A quick, gentle entrance each time a view becomes visible. No navigation delay. */
+.view:not([hidden]) {
+  animation:cr-view-enter .36s cubic-bezier(.2,.72,.2,1) both;
+}
+@keyframes cr-view-enter {
+  from {opacity:0;transform:translate3d(0,9px,0)}
+  to {opacity:1;transform:none}
+}
+
+/* One silver selection surface glides between the three navigation buttons. */
+@supports selector(:has(> a.active)) {
+  #nav {
+    display:grid;
+    grid-template-rows:repeat(3,60px);
+    gap:8px;
+    position:relative;
+    isolation:isolate;
+  }
+  #nav::before {
+    content:"";
+    position:absolute;
+    top:0;left:0;width:100%;height:60px;
+    border:1px solid rgba(232,235,242,.29);
+    border-radius:15px;
+    background:linear-gradient(160deg,rgba(205,211,222,.17),rgba(148,156,172,.07));
+    box-shadow:inset 0 1px rgba(255,255,255,.11);
+    pointer-events:none;
+    z-index:0;
+    transition:transform .4s cubic-bezier(.22,.8,.22,1);
+  }
+  #nav:has(> a[data-page="videos"].active)::before {transform:translateY(68px)}
+  #nav:has(> a[data-page="settings"].active)::before {transform:translateY(136px)}
+  #nav a {position:relative;z-index:1;transition:color .25s ease,background-color .25s ease}
+  #nav a.active {background:transparent;border-color:transparent;color:#f5f6f8}
+  #nav a:hover:not(.active) {background:rgba(255,255,255,.045);border-color:transparent}
+  @media(max-width:700px) {
+    #nav {grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:55px;gap:2px}
+    #nav::before {width:calc((100% - 4px) / 3);height:55px;border-radius:10px}
+    #nav:has(> a[data-page="videos"].active)::before {transform:translateX(calc(100% + 2px))}
+    #nav:has(> a[data-page="settings"].active)::before {transform:translateX(calc(200% + 4px))}
+  }
+}
+
+/* Cinematic poster lift without upscaling poster files or altering their pixels. */
+.anime-poster-card,.media-card,.feature-card {
+  transition:transform .38s cubic-bezier(.2,.78,.18,1),border-color .32s ease,box-shadow .38s ease;
+}
+.anime-poster-card img {transition:transform .45s cubic-bezier(.2,.78,.18,1)}
+.anime-poster-card:focus-visible {
+  transform:translateY(-6px) scale(1.015);
+  border-color:rgba(227,232,243,.65);
+  box-shadow:0 22px 48px rgba(0,0,0,.6);
+}
+@media(hover:hover) and (pointer:fine) {
+  .anime-poster-card:hover {
+    transform:translateY(-7px) scale(1.018);
+    border-color:rgba(227,232,243,.6);
+    box-shadow:0 24px 50px rgba(0,0,0,.62);
+  }
+  .anime-poster-card:hover img {transform:scale(1.035)}
+  .media-card:hover,.feature-card:hover {
+    transform:translateY(-5px) scale(1.012);
+    border-color:rgba(227,232,243,.42);
+    box-shadow:0 22px 44px rgba(0,0,0,.42);
+  }
+}
+@media(hover:none) {
+  .anime-poster-card:hover {transform:none;border-color:#ffffff21;box-shadow:0 10px 28px #0005}
+  .media-card:hover,.feature-card:hover {transform:none}
+}
+@media(prefers-reduced-motion:reduce) {
+  .view:not([hidden]) {animation:none}
+  #nav::before,.anime-poster-card,.anime-poster-card img,.media-card,.feature-card {transition:none}
+  .anime-poster-card:focus-visible {transform:none}
+}
+html.low-data-mode .glass,html.low-data-mode .video-tabs,
+html.low-data-mode .search-bar,html.low-data-mode .home-search {
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+html.low-data-mode .anime-poster-card,html.low-data-mode .anime-poster-card img,
+html.low-data-mode .media-card,html.low-data-mode .feature-card,
+html.low-data-mode #nav::before {transition:none}
