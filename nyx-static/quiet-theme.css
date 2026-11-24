@@ -201,10 +201,9 @@ footer span {color:#a9adb5}
 .media-detail-tools .button {font-size:12px;min-height:35px;padding:8px 12px}
 .media-source-note {margin:17px 0 0;padding:11px 13px;border:1px solid #ffffff17;border-radius:10px;background:#ffffff08;color:#aeb3bd;font-size:12px;line-height:1.55}
 
-/* Keep the photographed basalt visible on Home and center the identity. */
+/* The home-only lunar orbit is drawn as crisp SVG, not a stretched image. */
 body:has(.view[data-view="home"]:not([hidden])) {
-  background: linear-gradient(180deg,#07090dc2 0%,#07090d57 33%,#07090d54 67%,#080a0ddd 100%),
-    url('./assets/cryalune-basalt-hero.jpg') center center / cover fixed no-repeat #0b0d11;
+  background:#030405;
 }
 .main:has(.view[data-view="home"]:not([hidden])) .topbar {display:none}
 .home-landing {
@@ -214,17 +213,31 @@ body:has(.view[data-view="home"]:not([hidden])) {
   padding:70px 18px;
   text-align:center;
   position:relative;
+  isolation:isolate;
+  overflow:hidden;
 }
 .home-landing:before {
-  content:"";
-  position:absolute;
-  width:min(740px,90%);
-  height:390px;
-  border-radius:50%;
-  background:radial-gradient(ellipse,#07090bb9 0%,#07090b75 44%,transparent 72%);
-  filter:blur(24px);
-  pointer-events:none;
+  display:none;
 }
+.home-orbits {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:min(780px,94%);
+  height:auto;
+  transform:translate(-50%,-50%);
+  color:#c7cbd1;
+  pointer-events:none;
+  z-index:0;
+}
+.home-orbit-oval,.home-orbit-dotted {
+  stroke:currentColor;
+  stroke-width:1.25;
+  vector-effect:non-scaling-stroke;
+}
+.home-orbit-oval {opacity:.7}
+.home-orbit-dotted {stroke-dasharray:4 8;opacity:.6}
+.home-orbit-points {fill:#e4e6e9}
 .home-identity {position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:min(520px,100%)}
 .home-logo {display:block;width:116px;height:116px;filter:drop-shadow(0 5px 14px #0008)}
 .home-title {
@@ -364,7 +377,7 @@ body:has(.view[data-view="home"]:not([hidden])) {
 html.low-data-mode .media-card,html.low-data-mode .view {animation:none;transition:none}
 html.low-data-mode .poster img,html.low-data-mode .detail-poster img {display:none!important}
 html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
-  background:radial-gradient(ellipse at 50% 35%,#2c313b 0%,#171c24 45%,#0d1015 100%);
+  background:#030405;
 }
 @media(max-width:1250px) {
   #anime-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -389,6 +402,7 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .rail-nav a {min-height:55px}
   .rail-nav .nav-icon,.rail-nav .nav-icon svg {width:21px;height:21px}
   .home-landing {min-height:calc(100svh - 115px);padding:40px 10px}
+  .home-orbits {width:540px;max-width:none;opacity:.58}
   .home-logo {width:98px;height:98px}
   .home-title {font-size:clamp(30px,8vw,45px);letter-spacing:.19em;margin-left:.19em}
   .home-subtitle {font-size:9px;margin-bottom:26px}
@@ -404,7 +418,6 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .player-episode-nav .button {min-width:0;flex:1;font-size:11px;padding:8px 5px}
   .player-episode-nav #player-episode-count {font-size:10px;flex:0 1 85px}
   .player-dialog.cinema-mode .screen {height:calc(95dvh - 164px)}
-  body:has(.view[data-view="home"]:not([hidden])) {background-attachment:scroll;background-position:40% center}
 }
 @media(prefers-reduced-motion:reduce) {
   .video-tab,.button,.rail-nav a {transition:none}
