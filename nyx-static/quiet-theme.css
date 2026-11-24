@@ -203,7 +203,7 @@ footer span {color:#a9adb5}
 
 /* The home-only lunar orbit is drawn as crisp SVG, not a stretched image. */
 body:has(.view[data-view="home"]:not([hidden])) {
-  background:#030405;
+  background:#000;
 }
 .main:has(.view[data-view="home"]:not([hidden])) .topbar {display:none}
 .home-landing {
@@ -223,7 +223,7 @@ body:has(.view[data-view="home"]:not([hidden])) {
   position:absolute;
   top:50%;
   left:50%;
-  width:min(780px,94%);
+  width:min(900px,94%,calc(83dvh * 900 / 460));
   height:auto;
   transform:translate(-50%,-50%);
   color:#c7cbd1;
@@ -377,7 +377,7 @@ body:has(.view[data-view="home"]:not([hidden])) {
 html.low-data-mode .media-card,html.low-data-mode .view {animation:none;transition:none}
 html.low-data-mode .poster img,html.low-data-mode .detail-poster img {display:none!important}
 html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
-  background:#030405;
+  background:#000;
 }
 @media(max-width:1250px) {
   #anime-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -402,7 +402,7 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .rail-nav a {min-height:55px}
   .rail-nav .nav-icon,.rail-nav .nav-icon svg {width:21px;height:21px}
   .home-landing {min-height:calc(100svh - 115px);padding:40px 10px}
-  .home-orbits {width:540px;max-width:none;opacity:.58}
+  .home-orbits {width:min(540px,96%);max-width:none;opacity:.58}
   .home-logo {width:98px;height:98px}
   .home-title {font-size:clamp(30px,8vw,45px);letter-spacing:.19em;margin-left:.19em}
   .home-subtitle {font-size:9px;margin-bottom:26px}
@@ -613,3 +613,9 @@ html.low-data-mode body:has(.view[data-view="home"]:not([hidden])) {
   .anime-library-heading .search-bar {gap:8px;padding-left:12px}
   .anime-library-heading .search-bar .button {padding:6px 11px}
 }
+
+/* Explicit home stacking prevents an oversized artwork row. */
+.main {align-self:start;margin-block:0}
+.home-landing {display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.home-landing > svg.home-orbits {display:block;position:absolute;max-height:83dvh;overflow:visible;flex:none}
+.home-landing > .home-identity {flex:none;margin:0 auto}
