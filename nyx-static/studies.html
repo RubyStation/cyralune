@@ -31,6 +31,47 @@
 
       <section data-view="home" class="view">
         <div class="home-landing">
+          <!-- Decorative, lightweight animated silver-silk ribbons; never interactive. -->
+          <svg class="home-silver-flow" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="silver-flow-front" x1="0" y1="0" x2=".84" y2="1">
+                <stop offset="0" stop-color="#10141a"/>
+                <stop offset=".18" stop-color="#7b8492"/>
+                <stop offset=".34" stop-color="#d9dee5"/>
+                <stop offset=".48" stop-color="#5b626d"/>
+                <stop offset=".66" stop-color="#20252d"/>
+                <stop offset=".82" stop-color="#b6bec8"/>
+                <stop offset="1" stop-color="#11141a"/>
+              </linearGradient>
+              <linearGradient id="silver-flow-back" x1="0" y1="0" x2="1" y2=".7">
+                <stop offset="0" stop-color="#3d4652"/>
+                <stop offset=".29" stop-color="#c7cdd5"/>
+                <stop offset=".45" stop-color="#292f3a"/>
+                <stop offset=".74" stop-color="#737d8b"/>
+                <stop offset="1" stop-color="#12151b"/>
+              </linearGradient>
+              <linearGradient id="silver-flow-glint" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#a7b1be" stop-opacity="0"/>
+                <stop offset=".28" stop-color="#edf0f5" stop-opacity=".8"/>
+                <stop offset=".55" stop-color="#6d7785" stop-opacity=".08"/>
+                <stop offset=".78" stop-color="#c9d0db" stop-opacity=".7"/>
+                <stop offset="1" stop-color="#a7b1be" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g class="silver-flow-wave silver-flow-wave-back">
+              <path d="M-230 86 C60 250 246 94 466 128 S934 244 1177 112 S1540 78 1825 176 L1825 -140 L-230 -140Z" fill="url(#silver-flow-back)" opacity=".34"/>
+              <path d="M-180 160 C94 290 283 116 510 174 S973 283 1230 155 S1600 125 1790 236" fill="none" stroke="url(#silver-flow-glint)" stroke-width="3" opacity=".56"/>
+            </g>
+            <g class="silver-flow-wave silver-flow-wave-front">
+              <path d="M-250 775 C68 559 255 583 489 719 S927 934 1184 741 S1593 553 1820 689 L1820 1120 L-250 1120Z" fill="url(#silver-flow-front)" opacity=".56"/>
+              <path d="M-230 851 C42 667 285 662 545 786 S1001 968 1239 794 S1626 663 1830 748 L1830 1120 L-230 1120Z" fill="url(#silver-flow-back)" opacity=".38"/>
+              <path d="M-190 749 C88 570 293 605 522 736 S932 913 1205 735 S1617 558 1810 679" fill="none" stroke="url(#silver-flow-glint)" stroke-width="4" opacity=".7"/>
+              <path d="M-180 837 C102 662 320 681 555 791 S969 961 1241 792 S1635 646 1800 753" fill="none" stroke="#dbe0e9" stroke-width="1.8" opacity=".22"/>
+            </g>
+            <g class="silver-flow-shimmer">
+              <path d="M-120 712 C172 569 334 638 521 744 S924 884 1179 730 S1516 616 1720 670" fill="none" stroke="url(#silver-flow-glint)" stroke-width="1.6"/>
+            </g>
+          </svg>
           <div class="home-identity">
             <img class="home-logo" src="./assets/moonrise-logo.svg" alt="Cryalune Moonrise logo" width="112" height="112">
             <h1 class="home-title">CRYALUNE</h1>
