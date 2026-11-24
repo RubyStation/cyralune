@@ -139,7 +139,7 @@ const videoTabContent = {
 };
 function selectVideoTab(tab) {
   if (!Object.hasOwn(videoTabContent, tab)) tab = 'anime';
-  if (tab !== 'test') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); }
+  if (tab !== 'test') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); $('#jjk-test-video').pause(); }
   activeVideoTab = tab;
   const [heading, description] = videoTabContent[tab];
   $('#videos-heading').textContent = heading;
@@ -159,7 +159,7 @@ function pageRoute() {
   if (legacyTab) { activeVideoTab = legacyTab; page = 'videos'; }
   if (page === 'detail' && !selected) page = 'videos';
   if (!$(`[data-view="${page}"]`)) page = 'home';
-  if (page !== 'videos') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); }
+  if (page !== 'videos') { $('#temporary-test-video').pause(); $('#cloudflare-test-video').pause(); $('#jjk-test-video').pause(); }
   $$('.view').forEach(element => element.hidden = element.dataset.view !== page);
   $$('#nav a').forEach(element => { const active = element.dataset.page === page; element.classList.toggle('active', active); if (active) element.setAttribute('aria-current', 'page'); else element.removeAttribute('aria-current'); });
   if (page !== 'detail') { data.lastPage = page; save(); }
@@ -1163,6 +1163,28 @@ cloudflareTestVideo.addEventListener('error', () => {
   } else {
     $('#cloudflare-test-status').textContent = 'Neither source could play. Check your connection or retry.';
   }
+});
+// Keep the full-length release test separate from JJK's normal episode list.
+const JJK_TEST_WORKER_URL = 'https://cryalune-media-demo.veniceplays22.workers.dev/jjk-test.mp4';
+const jjkTestVideo = $('#jjk-test-video');
+$('#jjk-test-start').addEventListener('click', () => {
+  $('#temporary-test-video').pause();
+  cloudflareTestVideo.pause();
+  jjkTestVideo.pause();
+  jjkTestVideo.src = JJK_TEST_WORKER_URL;
+  jjkTestVideo.muted = false;
+  jjkTestVideo.volume = 1;
+  jjkTestVideo.load();
+  $('#jjk-test-status').textContent = 'Connecting to the GitHub Release through Cloudflare…';
+  jjkTestVideo.play().catch(() => {
+    if (!jjkTestVideo.error) $('#jjk-test-status').textContent = 'Video is ready. Press Play in the controls to begin.';
+  });
+});
+jjkTestVideo.addEventListener('loadedmetadata', () => {
+  $('#jjk-test-status').textContent = 'Release video metadata loaded. Try seeking forward, then check sound and video quality.';
+});
+jjkTestVideo.addEventListener('error', () => {
+  $('#jjk-test-status').textContent = 'Could not play this release through the Worker. Check that the updated Worker is deployed and the release asset is available.';
 });
 $('#export-data').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
