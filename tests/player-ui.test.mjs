@@ -40,6 +40,18 @@ test('Cloudflare test keeps the original 1080p sample and falls back to the Fire
   assert.ok(statSync(new URL('../nyx-static/assets/cyralune-demo.mp4', import.meta.url)).size > 100000);
 });
 
+test('full JJK release is isolated in the Test tab with an explicit play button', () => {
+  for (const id of ['jjk-test-video','jjk-test-start','jjk-test-status'])
+    assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /FULL-LENGTH STREAM TEST/);
+  assert.match(script, /https:\/\/cryalune-media-demo\.veniceplays22\.workers\.dev\/jjk-test\.mp4/);
+  assert.ok(script.includes("$('#jjk-test-start').addEventListener('click'"));
+  assert.ok(script.includes("jjkTestVideo.addEventListener('loadedmetadata'"));
+  assert.ok(script.includes("jjkTestVideo.addEventListener('error'"));
+  assert.match(script, /if \(tab !== 'test'\)[^\n]*jjk-test-video/);
+  assert.match(script, /if \(page !== 'videos'\)[^\n]*jjk-test-video/);
+});
+
 test('privacy notice and policy links are absent from the page', () => {
   assert.doesNotMatch(html, /privacy-notice|privacy-open|privacy-footer|Privacy &amp; attribution/);
 });
