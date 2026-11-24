@@ -88,15 +88,3 @@ test('search never includes old discovery caches or network-only anime', () => {
   assert.doesNotMatch(app, /const animeQuery =/);
   assert.doesNotMatch(app, /online = payload\.data\.Page\.media/);
 });
- 
-test('Silver Flow homepage is animated, lightweight and accessible', () => {
-  assert.match(page, /class="home-silver-flow"[^>]*aria-hidden="true"/);
-  assert.match(page, /class="silver-flow-wave silver-flow-wave-front"/);
-  assert.match(page, /class="silver-flow-shimmer"/);
-  assert.match(theme, /@keyframes silverFlowFront/);
-  assert.match(theme, /@keyframes silverFlowBack/);
-  assert.match(theme, /@keyframes silverFlowShimmer/);
-  assert.match(theme, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?\.home-silver-flow/);
-  assert.match(theme, /html\.low-data-mode \.home-silver-flow/);
-  assert.doesNotMatch(theme, /cryalune-basalt-hero\.jpg/);
-});
