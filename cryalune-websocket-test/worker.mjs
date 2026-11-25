@@ -119,7 +119,7 @@ export default {
     if (request.method !== 'GET') return message({error:'Method not allowed'}, 405);
 
     if (url.pathname === '/health') {
-      return message({status:'ok', service:'cryalune-websocket-test', wisp:false});
+      return message({status:'ok', service:'cryalune-test', wisp:false});
     }
 
     if (url.pathname === '/') {
