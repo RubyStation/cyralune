@@ -16,10 +16,10 @@ cd cryalune-websocket-test
 npx wrangler deploy
 ```
 
-The deployment creates a separate Worker named `cryalune-websocket-test`.
-Your existing `cryalune-media-demo` Worker remains untouched.
+The deployment creates a separate Worker named `cryalune-test`.
+Your existing `cryalune-media-demo` Worker remains untouched. The old\n`cryalune-websocket-test` deployment also remains until you remove it separately;\nthe new name creates a new Worker.
 
-Open the newly deployed `https://cryalune-websocket-test.<your-subdomain>.workers.dev/`
+Open the newly deployed `https://cryalune-test.<your-subdomain>.workers.dev/`
 URL on your Chromebook and select **Test connection**. You should see either a
 clear success message or a connection failure. `/health` returns JSON and can
 be used as a basic availability check.
